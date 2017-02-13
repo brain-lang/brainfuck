@@ -1,6 +1,6 @@
 [package]
 name = "brain-brainfuck"
-version = "0.1.2"
+version = "1.0.0"
 authors = ["Sunjay Varma <varma.sunjay@gmail.com>"]
 description = "Brainfuck interpreter companion to the brain programming language"
 repository = "https://github.com/brain-lang/brainfuck"
