@@ -8,7 +8,7 @@ use std::path::{Path};
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
-use std::collections::VecDeque;
+use std::collections::{VecDeque, HashMap};
 use std::thread;
 use std::time::Duration;
 
@@ -78,6 +78,7 @@ fn main() {
 }
 
 fn interpret(program: Vec<char>, debug: bool, delay: u64) {
+    let mut jumps: HashMap<usize, usize> = HashMap::new();
     let mut buffer: VecDeque<u8> = VecDeque::new();
     // Make sure there is at least one cell to begin with
     buffer.push_back(0u8);
@@ -123,12 +124,12 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
             },
             '[' => {
                 if buffer[p] == 0 {
-                    i = find_matching(&program, i - 1) + 1;
+                    i = find_matching(&program, &mut jumps, i - 1) + 1;
                 }
             },
             ']' => {
                 if buffer[p] != 0 {
-                    i = find_matching(&program, i - 1) + 1;
+                    i = find_matching(&program, &mut jumps, i - 1) + 1;
                 }
             },
             _ => continue,
@@ -145,29 +146,54 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
 
 /// Finds the matching '[' or ']' for the given position within the program
 /// panics if a match is not found
-fn find_matching(program: &Vec<char>, start: usize) -> usize {
-    let direction: isize = match program[start] {
-        '[' => 1,
-        ']' => -1,
+fn find_matching(program: &Vec<char>, jumps: &mut HashMap<usize, usize>, start: usize) -> usize {
+    if let Some(matching) = jumps.get(&start) {
+        return *matching;
+    }
+
+    let search_forward: bool = match program[start] {
+        '[' => true,
+        ']' => false,
         _ => unreachable!(),
     };
 
-    let mut count = direction;
+    // Here we are trying to make this search faster by caching the jumps we see along the way
+    let mut encountered_jumps: VecDeque<usize> = VecDeque::new();
+    encountered_jumps.push_back(start);
+
     let mut current = start;
     loop {
-        if (direction < 0 && current == 0) || (direction > 0 && current >= program.len() - 1) {
+        if (!search_forward && current == 0) || (search_forward && current >= program.len() - 1) {
             panic!("Could not find matching parenthesis for instruction {}", start);
         }
-        current = (current as isize + direction) as usize;
-        let c = program[current];
+        current = if search_forward { current + 1 } else { current - 1 };
 
-        count = match c {
-            '[' => count + 1,
-            ']' => count - 1,
-            _ => count,
+        let c = program[current];
+        match c {
+            '[' => {
+                if search_forward {
+                    encountered_jumps.push_back(current);
+                }
+                else {
+                    let backward = encountered_jumps.pop_back().expect("Mismatched [ instruction");
+                    jumps.insert(current, backward);
+                    jumps.insert(backward, current);
+                }
+            },
+            ']' => {
+                if search_forward {
+                    let forward = encountered_jumps.pop_back().expect("Mismatched ] instruction");
+                    jumps.insert(forward, current);
+                    jumps.insert(current, forward);
+                }
+                else {
+                    encountered_jumps.push_back(current);
+                }
+            },
+            _ => (),
         };
 
-        if count == 0 {
+        if encountered_jumps.len() == 0 {
             break;
         }
     }
