@@ -1,8 +1,8 @@
-## Credit where credit is due
+## Credit Where Credit Is Due
 
 Found in [alexprengere/PythonBrainFuck](https://github.com/alexprengere/PythonBrainFuck)
-* [hanoi.bf](hanoi.bf) - A mandelbrot set fractal viewer in brainf*** written by Erik Bosman
-* [mandel.bf](mandel.bf) - Written by Clifford Wolf <http://www.clifford.at/bfcpu/>
+* [hanoi.bf](hanoi.bf) - Written by Clifford Wolf <http://www.clifford.at/bfcpu/>
+* [mandel.bf](mandel.bf) - A mandelbrot set fractal viewer in brainf*** written by Erik Bosman
 * [99bottles.bf](99bottles.bf) - 99 bottles of beer in Brainf*ck - Copyright (C) 2008 Raphael Bois
 
 Found in [Reference to the brainfuck language](http://www.hevanet.com/cristofd/brainfuck/)
