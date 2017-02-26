@@ -87,6 +87,11 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
     // i is the instruction index in the program
     let mut i: usize = 0;
 
+    // Stack of [ instructions so jumping backwards is super fast
+    // The capacity is an estimate of what the typical maximum amount of nesting will be present
+    // in a brainfuck program. If this is high enough, there will never be any allocation in the
+    // stack after initialization
+    let mut jump_stack = VecDeque::with_capacity(15);
     loop {
         if i >= program.len() {
             break;
@@ -123,12 +128,18 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
             },
             '[' => {
                 if buffer[p] == 0 {
-                    i = find_matching(&program, i - 1) + 1;
+                    i = find_matching(&program, i - 1);
                 }
+                jump_stack.push_back(i);
             },
             ']' => {
                 if buffer[p] != 0 {
-                    i = find_matching(&program, i - 1) + 1;
+                    i = *jump_stack.back()
+                        .expect(&format!("Mismatched jump instructions at position {}", i));
+                }
+                else {
+                    jump_stack.pop_back()
+                        .expect(&format!("Mismatched jump instructions at position {}", i));
                 }
             },
             _ => continue,
