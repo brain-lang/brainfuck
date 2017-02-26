@@ -1,4 +1,4 @@
-/// Brainfuck language interpreter
+//! Brainfuck language interpreter
 
 #[macro_use]
 extern crate clap;
