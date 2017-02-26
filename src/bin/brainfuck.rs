@@ -1,5 +1,5 @@
 /// Brainfuck language interpreter
-/// As specified here: http://www.muppetlabs.com/~breadbox/bf/
+
 #[macro_use]
 extern crate clap;
 
