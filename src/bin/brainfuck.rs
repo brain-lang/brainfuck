@@ -5,6 +5,7 @@ extern crate clap;
 
 use std::process;
 use std::path::{Path};
+use std::fmt;
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
@@ -13,6 +14,49 @@ use std::thread;
 use std::time::Duration;
 
 use clap::{Arg, App};
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Instruction {
+    // ">" - increment the pointer (move it to the "right")
+    Right,
+    // "<" - decrement the pointer (move it to the "left")
+    Left,
+    // "+" - increment the byte at the pointer
+    Increment,
+    // "-" - decrement the byte at the pointer
+    Decrement,
+    // "." - output the byte at the pointer
+    Write,
+    // "," - input a byte and store it in the byte at the pointer
+    Read,
+    // "[" - jump forward past the matching ] if the byte at the pointer is zero
+    JumpForwardIfZero {
+        // Store the instruction index of the matching parenthesis
+        // Lazily initialized as needed
+        matching: Option<usize>,
+    },
+    // "]" - jump backward to the matching [ unless the byte at the pointer is zero
+    JumpBackwardUnlessZero {
+        // Store the instruction index of the matching parenthesis
+        // Strictly initialized when the program is loaded into memory
+        matching: usize,
+    },
+}
+
+impl fmt::Display for Instruction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", match *self {
+            Instruction::Right => '>',
+            Instruction::Left => '<',
+            Instruction::Increment => '+',
+            Instruction::Decrement => '-',
+            Instruction::Write => '.',
+            Instruction::Read => ',',
+            Instruction::JumpForwardIfZero { .. } => '[',
+            Instruction::JumpBackwardUnlessZero { .. } => ']',
+        })
+    }
+}
 
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
@@ -70,14 +114,38 @@ fn main() {
         exit_with_error!("Could not open source file: {}", e);
     });
 
-    let program = f.bytes().map(
-        |c| c.expect("Fatal: Could not read char") as char
-    ).collect::<Vec<char>>();
+    let mut jump_stack = VecDeque::with_capacity(15);
+    let program = f.bytes().map(|c|
+        match c.expect("Fatal: Could not read char") as char {
+            '>' => Some(Instruction::Right),
+            '<' => Some(Instruction::Left),
+            '+' => Some(Instruction::Increment),
+            '-' => Some(Instruction::Decrement),
+            '.' => Some(Instruction::Write),
+            ',' => Some(Instruction::Read),
+            '[' => Some(Instruction::JumpForwardIfZero {matching: None}),
+            ']' => Some(Instruction::JumpBackwardUnlessZero {matching: 0}),
+            _ => None,
+        }
+    ).filter(|c| c.is_some()).map(|c| c.unwrap()).enumerate().map(|(i, c)|
+        match c {
+            Instruction::JumpForwardIfZero { .. } => {
+                jump_stack.push_back(i);
+                c
+            },
+            Instruction::JumpBackwardUnlessZero { .. } => {
+                let matching = jump_stack.pop_back()
+                    .expect(&format!("Mismatched jump instruction at position {}", i + 1));
+                Instruction::JumpBackwardUnlessZero {matching: matching + 1}
+            }
+            _ => c,
+        }
+    ).collect::<Vec<Instruction>>();
 
     interpret(program, debug_mode, delay);
 }
 
-fn interpret(program: Vec<char>, debug: bool, delay: u64) {
+fn interpret(program: Vec<Instruction>, debug: bool, delay: u64) {
     let mut buffer: VecDeque<u8> = VecDeque::new();
     // Make sure there is at least one cell to begin with
     buffer.push_back(0u8);
@@ -87,26 +155,21 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
     // i is the instruction index in the program
     let mut i: usize = 0;
 
-    // Stack of [ instructions so jumping backwards is super fast
-    // The capacity is an estimate of what the typical maximum amount of nesting will be present
-    // in a brainfuck program. If this is high enough, there will never be any allocation in the
-    // stack after initialization
-    let mut jump_stack = VecDeque::with_capacity(15);
     loop {
         if i >= program.len() {
             break;
         }
-        let c = program[i];
+        let mut instr = program[i];
         i += 1;
 
-        match c {
-            '>' => {
+        match instr {
+            Instruction::Right => {
                 p += 1;
                 if p >= buffer.len() {
                     buffer.push_back(0u8);
                 }
             },
-            '<' => {
+            Instruction::Left => {
                 if p == 0 {
                     buffer.push_front(0u8);
                 }
@@ -114,10 +177,10 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
                     p -= 1;
                 }
             },
-            '+' => buffer[p] = buffer[p].wrapping_add(1),
-            '-' => buffer[p] = buffer[p].wrapping_sub(1),
-            '.' => print!("{}", buffer[p] as char),
-            ',' => {
+            Instruction::Increment => buffer[p] = buffer[p].wrapping_add(1),
+            Instruction::Decrement => buffer[p] = buffer[p].wrapping_sub(1),
+            Instruction::Write => print!("{}", buffer[p] as char),
+            Instruction::Read => {
                 let chr = io::stdin().bytes().next();
                 if chr.is_none() {
                     buffer[p] = 0;
@@ -126,27 +189,24 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
                     buffer[p] = chr.unwrap().expect("Could not read input");
                 }
             },
-            '[' => {
+            Instruction::JumpForwardIfZero {ref mut matching} => {
                 if buffer[p] == 0 {
-                    i = find_matching(&program, i - 1);
+                    i = matching.unwrap_or_else(|| {
+                        let m = find_matching(&program, i - 1) + 1;
+                        *matching = Some(m);
+                        m
+                    });
                 }
-                jump_stack.push_back(i);
             },
-            ']' => {
+            Instruction::JumpBackwardUnlessZero {matching} => {
                 if buffer[p] != 0 {
-                    i = *jump_stack.back()
-                        .expect(&format!("Mismatched jump instructions at position {}", i));
-                }
-                else {
-                    jump_stack.pop_back()
-                        .expect(&format!("Mismatched jump instructions at position {}", i));
+                    i = matching;
                 }
             },
-            _ => continue,
         }
 
         if debug {
-            println_stderr!("{{\"lastInstructionIndex\": {}, \"lastInstruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}", i-1, c, p,
+            println_stderr!("{{\"lastInstructionIndex\": {}, \"lastInstruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}", i-1, instr, p,
                 buffer.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v)));
         }
 
@@ -156,10 +216,10 @@ fn interpret(program: Vec<char>, debug: bool, delay: u64) {
 
 /// Finds the matching '[' or ']' for the given position within the program
 /// panics if a match is not found
-fn find_matching(program: &Vec<char>, start: usize) -> usize {
+fn find_matching(program: &Vec<Instruction>, start: usize) -> usize {
     let direction: isize = match program[start] {
-        '[' => 1,
-        ']' => -1,
+        Instruction::JumpForwardIfZero { .. } => 1,
+        Instruction::JumpBackwardUnlessZero { .. } => -1,
         _ => unreachable!(),
     };
 
@@ -173,8 +233,8 @@ fn find_matching(program: &Vec<char>, start: usize) -> usize {
         let c = program[current];
 
         count = match c {
-            '[' => count + 1,
-            ']' => count - 1,
+            Instruction::JumpForwardIfZero { .. } => count + 1,
+            Instruction::JumpBackwardUnlessZero { .. } => count - 1,
             _ => count,
         };
 
