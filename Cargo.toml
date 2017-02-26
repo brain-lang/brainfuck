@@ -15,6 +15,7 @@ clap = "^2.0"
 
 [[bin]]
 name = "brainfuck"
+doc = false
 
 [lib]
 name = "brainfuck"
