@@ -1,7 +1,7 @@
 # Brainfuck Specification
 
 | Key | Value |
-| --- | --- | --- |
+| --- | --- |
 | Version | 1.0.0 |
 | Author | Sunjay Varma (sunjay.ca) |
 | License | GNU General Public License (Version 3)<br>https://www.gnu.org/licenses/gpl-3.0.en.html<br>This license applies to the specification and not code written using it. |
