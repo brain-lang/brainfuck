@@ -1,7 +1,7 @@
 # brainfuck
 
-[![Crates.io](https://img.shields.io/crates/v/brainfuck.svg)](https://crates.io/crates/brainfuck)
-[![Crates.io](https://img.shields.io/crates/l/brainfuck.svg)](https://crates.io/crates/brainfuck)
+[![Crates.io](https://img.shields.io/crates/v/brain-brainfuck.svg)](https://crates.io/crates/brain-brainfuck)
+[![Crates.io](https://img.shields.io/crates/l/brain-brainfuck.svg)](https://crates.io/crates/brain-brainfuck)
 [![Build Status](https://travis-ci.org/brain-lang/brainfuck.svg?branch=master)](https://travis-ci.org/brain-lang/brainfuck)
 [![Gitter](https://img.shields.io/gitter/room/brain-lang/brain.svg)](https://gitter.im/brain-lang/brain)
 
