@@ -12,10 +12,10 @@ if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS
     cd  "${TRAVIS_REPO_SLUG}-bench" && \
     # Bench master
     git checkout "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" && \
-    cargo bench > previous-benchmark && \
+    cargo bench | tee previous-benchmark && \
     # Bench variable
     git checkout ${TRAVIS_COMMIT} && \
-    cargo bench > current-benchmark && \
+    cargo bench | tee current-benchmark && \
     cargo install cargo-benchcmp --force && \
     cargo benchcmp previous-benchmark current-benchmark;
 fi
