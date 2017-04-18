@@ -1,12 +1,12 @@
-#![feature(test)]
-extern crate test;
+#[macro_use]
+extern crate bencher;
 
 #[macro_use]
 extern crate lazy_static;
 
 extern crate brainfuck;
 
-use test::Bencher;
+use bencher::Bencher;
 
 use brainfuck::{precompile, interpret};
 
@@ -23,45 +23,61 @@ lazy_static! {
     static ref SLOW_SOURCE: Vec<u8> = include_bytes!("../examples/mandel.bf").to_vec();
 }
 
-#[bench]
-fn compile_trivial(b: &mut Bencher) {
+struct NullWrite;
+
+impl std::io::Write for NullWrite {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+benchmark_group!(benches,
+    b01_compile_trivial,
+    b02_compile_large,
+    b03_compile_huge,
+    b04_compile_simple,
+    b05_compile_slow,
+    b06_interpret_trivial,
+    b07_interpret_simple,
+    b08_interpret_slow
+);
+benchmark_main!(benches);
+
+fn b01_compile_trivial(b: &mut Bencher) {
     b.iter(|| precompile(TRIVIAL_SOURCE.iter()));
 }
 
-#[bench]
-fn compile_large(b: &mut Bencher) {
+fn b02_compile_large(b: &mut Bencher) {
     b.iter(|| precompile(LARGE_SOURCE.iter()));
 }
 
-#[bench]
-fn compile_huge(b: &mut Bencher) {
-    b.iter(|| precompile(HUGE_SOURCE.iter()));
+fn b03_compile_huge(b: &mut Bencher) {
+    b.bench_n(3, |b| b.iter(|| precompile(HUGE_SOURCE.iter())));
 }
 
-#[bench]
-fn compile_simple(b: &mut Bencher) {
+fn b04_compile_simple(b: &mut Bencher) {
     b.iter(|| precompile(SIMPLE_SOURCE.iter()));
 }
 
-#[bench]
-fn compile_slow(b: &mut Bencher) {
+fn b05_compile_slow(b: &mut Bencher) {
     b.iter(|| precompile(SLOW_SOURCE.iter()));
 }
 
-#[bench]
-fn interpret_trivial(b: &mut Bencher) {
+fn b06_interpret_trivial(b: &mut Bencher) {
     let program = precompile(TRIVIAL_SOURCE.iter());
-    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
-#[bench]
-fn interpret_simple(b: &mut Bencher) {
+fn b07_interpret_simple(b: &mut Bencher) {
     let program = precompile(SIMPLE_SOURCE.iter());
-    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
-#[bench]
-fn interpret_slow(b: &mut Bencher) {
+fn b08_interpret_slow(b: &mut Bencher) {
     let program = precompile(SLOW_SOURCE.iter());
-    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
+    b.bench_n(1, |b| b.iter(|| interpret(program.clone(), ::std::io::stdout(), false, 0)));
 }
