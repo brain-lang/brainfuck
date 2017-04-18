@@ -34,7 +34,6 @@ fn compile_large(b: &mut Bencher) {
 }
 
 #[bench]
-#[ignore]
 fn compile_huge(b: &mut Bencher) {
     b.iter(|| precompile(HUGE_SOURCE.iter()));
 }
@@ -50,11 +49,19 @@ fn compile_slow(b: &mut Bencher) {
 }
 
 #[bench]
+fn interpret_trivial(b: &mut Bencher) {
+    let program = precompile(TRIVIAL_SOURCE.iter());
+    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
+}
+
+#[bench]
 fn interpret_simple(b: &mut Bencher) {
-    b.iter(|| interpret(precompile(SIMPLE_SOURCE.iter()), false, 0));
+    let program = precompile(SIMPLE_SOURCE.iter());
+    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
 }
 
 #[bench]
 fn interpret_slow(b: &mut Bencher) {
-    b.iter(|| interpret(precompile(SLOW_SOURCE.iter()), false, 0));
+    let program = precompile(SLOW_SOURCE.iter());
+    b.iter(|| interpret(program.clone(), Vec::new(), false, 0));
 }

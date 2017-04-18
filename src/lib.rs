@@ -98,7 +98,8 @@ pub fn precompile<'a, I>(bytes: I) -> Vec<Instruction>
     ).collect::<Vec<Instruction>>()
 }
 
-pub fn interpret(program: Vec<Instruction>, debug: bool, delay: u64) {
+pub fn interpret<OutFile>(program: Vec<Instruction>, mut out: OutFile, debug: bool, delay: u64)
+    where OutFile: Write {
     let mut buffer: VecDeque<u8> = VecDeque::new();
     // Make sure there is at least one cell to begin with
     buffer.push_back(0u8);
@@ -132,7 +133,7 @@ pub fn interpret(program: Vec<Instruction>, debug: bool, delay: u64) {
             },
             Instruction::Increment => buffer[p] = buffer[p].wrapping_add(1),
             Instruction::Decrement => buffer[p] = buffer[p].wrapping_sub(1),
-            Instruction::Write => print!("{}", buffer[p] as char),
+            Instruction::Write => write!(&mut out, "{}", buffer[p] as char).expect("Could not output"),
             Instruction::Read => {
                 let chr = io::stdin().bytes().next();
                 if chr.is_none() {
