@@ -67,9 +67,10 @@ impl fmt::Display for Instruction {
 }
 
 /// Precompile the program into an appropriate in-memory representation
-pub fn precompile(bytes: Vec<u8>) -> Vec<Instruction> {
+pub fn precompile<'a, I>(bytes: I) -> Vec<Instruction>
+    where I: IntoIterator<Item=&'a u8> {
     let mut jump_stack = VecDeque::with_capacity(15);
-    bytes.into_iter().map(|c|
+    bytes.into_iter().map(|&c|
         match c {
             b'>' => Some(Instruction::Right),
             b'<' => Some(Instruction::Left),

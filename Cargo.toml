@@ -13,6 +13,9 @@ license = "MIT"
 [dependencies]
 clap = "^2.0"
 
+[dev-dependencies]
+lazy_static = "0.2"
+
 [[bin]]
 name = "brainfuck"
 doc = false

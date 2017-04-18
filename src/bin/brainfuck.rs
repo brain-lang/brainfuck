@@ -57,6 +57,6 @@ fn main() {
 
     let mut bytes = Vec::new();
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
-    let program = precompile(bytes);
+    let program = precompile(bytes.iter());
     interpret(program, debug_mode, delay);
 }
