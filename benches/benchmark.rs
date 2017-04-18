@@ -1,12 +1,12 @@
-#[macro_use]
-extern crate bencher;
+#![feature(test)]
+extern crate test;
 
 #[macro_use]
 extern crate lazy_static;
 
 extern crate brainfuck;
 
-use bencher::Bencher;
+use test::Bencher;
 
 use brainfuck::{precompile, interpret};
 
@@ -35,49 +35,46 @@ impl std::io::Write for NullWrite {
     }
 }
 
-benchmark_group!(benches,
-    b01_compile_trivial,
-    b02_compile_large,
-    b03_compile_huge,
-    b04_compile_simple,
-    b05_compile_slow,
-    b06_interpret_trivial,
-    b07_interpret_simple,
-    b08_interpret_slow
-);
-benchmark_main!(benches);
-
+#[bench]
 fn b01_compile_trivial(b: &mut Bencher) {
     b.iter(|| precompile(TRIVIAL_SOURCE.iter()));
 }
 
+#[bench]
 fn b02_compile_large(b: &mut Bencher) {
     b.iter(|| precompile(LARGE_SOURCE.iter()));
 }
 
+#[bench]
 fn b03_compile_huge(b: &mut Bencher) {
-    b.bench_n(3, |b| b.iter(|| precompile(HUGE_SOURCE.iter())));
+    b.iter(|| precompile(HUGE_SOURCE.iter()));
 }
 
+#[bench]
 fn b04_compile_simple(b: &mut Bencher) {
     b.iter(|| precompile(SIMPLE_SOURCE.iter()));
 }
 
+#[bench]
 fn b05_compile_slow(b: &mut Bencher) {
     b.iter(|| precompile(SLOW_SOURCE.iter()));
 }
 
+#[bench]
 fn b06_interpret_trivial(b: &mut Bencher) {
     let program = precompile(TRIVIAL_SOURCE.iter());
     b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
+#[bench]
 fn b07_interpret_simple(b: &mut Bencher) {
     let program = precompile(SIMPLE_SOURCE.iter());
     b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
+#[bench]
+#[ignore]
 fn b08_interpret_slow(b: &mut Bencher) {
     let program = precompile(SLOW_SOURCE.iter());
-    b.bench_n(1, |b| b.iter(|| interpret(program.clone(), ::std::io::stdout(), false, 0)));
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }

@@ -23,7 +23,3 @@ doc = false
 
 [lib]
 name = "brainfuck"
-
-[[bench]]
-name = "benchmark"
-harness = false
