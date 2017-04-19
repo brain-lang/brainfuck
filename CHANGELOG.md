@@ -7,7 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Nothing...yet!
+- Optimizations on by default
+  - This is an interpreter designed to run code fast, simulating a brainfuck
+    turing machine exactly is not necessarily in service of that
+  - This change resulted in `examples/mandel.bf` dropping from 1m46s to 0m39s
+    on @sunjay's machine. Huge improvement!
+  - See more discussion about this in [#4](https://github.com/brain-lang/brainfuck/issues/4)
+- Optimizations can be turned off with the `-O0` command line flag
+  - Use this to produce the most accurate simulation of a brainfuck turing
+    machine
+- Optimizations are **off** by default when `--debug` is passed as a command
+  line argument
+  - To force optimizations in debug mode, use the `-O1` flag
 
 ## [1.1.2] - 2017-04-18
 ### Added

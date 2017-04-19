@@ -31,6 +31,16 @@ fn main() {
             .long("debug")
             .help("Enables debug mode which outputs debugging information to stderr")
         )
+        .arg(Arg::with_name("optimize")
+            .short("O")
+            .long("optimize")
+            .value_name("opt-level")
+            // Do not optimize by default if debug is enabled
+            .default_value_if("debug-enabled", None, "0")
+            .default_value("1")
+            .possible_values(&["0", "1"])
+            .help("Optimize for execution speed")
+        )
         .arg(Arg::with_name("delay")
             .long("delay")
             .takes_value(true)
@@ -51,12 +61,15 @@ fn main() {
         0
     };
 
+    // We can call unwrap() because the validation is already done by clap
+    let opt = args.value_of("optimize").unwrap().parse().unwrap();
+
     let mut f = File::open(source_path).unwrap_or_else(|e| {
         exit_with_error!("Could not open source file: {}", e);
     });
 
     let mut bytes = Vec::new();
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
-    let program = precompile(bytes.iter());
+    let program = precompile(bytes.iter(), opt);
     interpret(program, ::std::io::stdout(), debug_mode, delay);
 }
