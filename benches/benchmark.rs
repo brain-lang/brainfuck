@@ -8,7 +8,7 @@ extern crate brainfuck;
 
 use test::Bencher;
 
-use brainfuck::{precompile, interpret};
+use brainfuck::{precompile, interpret, OptimizationLevel};
 
 lazy_static! {
     // This program is trivial to run in both size and speed
@@ -37,44 +37,88 @@ impl std::io::Write for NullWrite {
 
 #[bench]
 fn b01_compile_trivial(b: &mut Bencher) {
-    b.iter(|| precompile(TRIVIAL_SOURCE.iter()));
+    b.iter(|| precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Off));
+}
+
+#[bench]
+fn b01_compile_trivial_opt(b: &mut Bencher) {
+    b.iter(|| precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Speed));
 }
 
 #[bench]
 fn b02_compile_large(b: &mut Bencher) {
-    b.iter(|| precompile(LARGE_SOURCE.iter()));
+    b.iter(|| precompile(LARGE_SOURCE.iter(), OptimizationLevel::Off));
+}
+
+#[bench]
+fn b02_compile_large_opt(b: &mut Bencher) {
+    b.iter(|| precompile(LARGE_SOURCE.iter(), OptimizationLevel::Speed));
 }
 
 #[bench]
 fn b03_compile_huge(b: &mut Bencher) {
-    b.iter(|| precompile(HUGE_SOURCE.iter()));
+    b.iter(|| precompile(HUGE_SOURCE.iter(), OptimizationLevel::Off));
+}
+
+#[bench]
+fn b03_compile_huge_opt(b: &mut Bencher) {
+    b.iter(|| precompile(HUGE_SOURCE.iter(), OptimizationLevel::Speed));
 }
 
 #[bench]
 fn b04_compile_simple(b: &mut Bencher) {
-    b.iter(|| precompile(SIMPLE_SOURCE.iter()));
+    b.iter(|| precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Off));
+}
+
+#[bench]
+fn b04_compile_simple_opt(b: &mut Bencher) {
+    b.iter(|| precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Speed));
 }
 
 #[bench]
 fn b05_compile_slow(b: &mut Bencher) {
-    b.iter(|| precompile(SLOW_SOURCE.iter()));
+    b.iter(|| precompile(SLOW_SOURCE.iter(), OptimizationLevel::Off));
+}
+
+#[bench]
+fn b05_compile_slow_opt(b: &mut Bencher) {
+    b.iter(|| precompile(SLOW_SOURCE.iter(), OptimizationLevel::Speed));
 }
 
 #[bench]
 fn b06_interpret_trivial(b: &mut Bencher) {
-    let program = precompile(TRIVIAL_SOURCE.iter());
+    let program = precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Off);
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+}
+
+#[bench]
+fn b06_interpret_trivial_opt(b: &mut Bencher) {
+    let program = precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Speed);
     b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
 #[bench]
 fn b07_interpret_simple(b: &mut Bencher) {
-    let program = precompile(SIMPLE_SOURCE.iter());
+    let program = precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Off);
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+}
+
+#[bench]
+fn b07_interpret_simple_opt(b: &mut Bencher) {
+    let program = precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Speed);
     b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
 
 #[bench]
 #[ignore]
 fn b08_interpret_slow(b: &mut Bencher) {
-    let program = precompile(SLOW_SOURCE.iter());
+    let program = precompile(SLOW_SOURCE.iter(), OptimizationLevel::Off);
+    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+}
+
+#[bench]
+#[ignore]
+fn b08_interpret_slow_opt(b: &mut Bencher) {
+    let program = precompile(SLOW_SOURCE.iter(), OptimizationLevel::Speed);
     b.iter(|| interpret(program.clone(), NullWrite, false, 0));
 }
