@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use std::thread;
 use std::time::Duration;
 use std::str::FromStr;
+use std::iter::repeat;
 
 #[macro_export]
 macro_rules! exit_with_error(
@@ -27,13 +28,13 @@ macro_rules! println_stderr(
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Instruction {
     // ">" - increment the pointer (move it to the "right")
-    Right,
+    Right(usize),
     // "<" - decrement the pointer (move it to the "left")
-    Left,
+    Left(usize),
     // "+" - increment the byte at the pointer
-    Increment,
+    Increment(usize),
     // "-" - decrement the byte at the pointer
-    Decrement,
+    Decrement(usize),
     // "." - output the byte at the pointer
     Write,
     // "," - input a byte and store it in the byte at the pointer
@@ -55,14 +56,14 @@ pub enum Instruction {
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", match *self {
-            Instruction::Right => '>',
-            Instruction::Left => '<',
-            Instruction::Increment => '+',
-            Instruction::Decrement => '-',
-            Instruction::Write => '.',
-            Instruction::Read => ',',
-            Instruction::JumpForwardIfZero { .. } => '[',
-            Instruction::JumpBackwardUnlessZero { .. } => ']',
+            Instruction::Right(n) => repeat(">").take(n).collect(),
+            Instruction::Left(n) => repeat("<").take(n).collect(),
+            Instruction::Increment(n) => repeat("+").take(n).collect(),
+            Instruction::Decrement(n) => repeat("-").take(n).collect(),
+            Instruction::Write => ".".to_owned(),
+            Instruction::Read => ",".to_owned(),
+            Instruction::JumpForwardIfZero { .. } => "[".to_owned(),
+            Instruction::JumpBackwardUnlessZero { .. } => "]".to_owned(),
         })
     }
 }
@@ -89,13 +90,15 @@ impl FromStr for OptimizationLevel {
 /// Precompile the program into an appropriate in-memory representation
 pub fn precompile<'a, I>(bytes: I, opt: OptimizationLevel) -> Vec<Instruction>
     where I: IntoIterator<Item=&'a u8> {
+    // We typically don't expect to see more than this many levels of nested jumps
+    // based on an analysis of some brainfuck programs
     let mut jump_stack = VecDeque::with_capacity(15);
     bytes.into_iter().map(|&c|
         match c {
-            b'>' => Some(Instruction::Right),
-            b'<' => Some(Instruction::Left),
-            b'+' => Some(Instruction::Increment),
-            b'-' => Some(Instruction::Decrement),
+            b'>' => Some(Instruction::Right(1)),
+            b'<' => Some(Instruction::Left(1)),
+            b'+' => Some(Instruction::Increment(1)),
+            b'-' => Some(Instruction::Decrement(1)),
             b'.' => Some(Instruction::Write),
             b',' => Some(Instruction::Read),
             b'[' => Some(Instruction::JumpForwardIfZero {matching: None}),
@@ -137,22 +140,25 @@ pub fn interpret<OutFile>(program: Vec<Instruction>, mut out: OutFile, debug: bo
         i += 1;
 
         match instr {
-            Instruction::Right => {
-                p += 1;
-                if p >= buffer.len() {
+            Instruction::Right(amount) => {
+                p += amount;
+                while p >= buffer.len() {
                     buffer.push_back(0u8);
                 }
             },
-            Instruction::Left => {
-                if p == 0 {
-                    buffer.push_front(0u8);
+            Instruction::Left(amount) => {
+                if amount > p {
+                    for _ in 0..(amount - p) {
+                        buffer.push_front(0u8);
+                    }
+                    p = 0;
                 }
                 else {
                     p -= 1;
                 }
             },
-            Instruction::Increment => buffer[p] = buffer[p].wrapping_add(1),
-            Instruction::Decrement => buffer[p] = buffer[p].wrapping_sub(1),
+            Instruction::Increment(amount) => buffer[p] = buffer[p].wrapping_add(amount as u8),
+            Instruction::Decrement(amount) => buffer[p] = buffer[p].wrapping_sub(amount as u8),
             Instruction::Write => write!(&mut out, "{}", buffer[p] as char).expect("Could not output"),
             Instruction::Read => {
                 let chr = io::stdin().bytes().next();
