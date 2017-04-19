@@ -4,6 +4,7 @@ use std::io::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
 use std::time::Duration;
+use std::str::FromStr;
 
 #[macro_export]
 macro_rules! exit_with_error(
@@ -66,8 +67,27 @@ impl fmt::Display for Instruction {
     }
 }
 
+pub enum OptimizationLevel {
+    // Do not optimize
+    Off,
+    // Optimize for speed
+    Speed,
+}
+
+impl FromStr for OptimizationLevel {
+    type Err = ();
+
+    fn from_str(val: &str) -> Result<Self, Self::Err> {
+        match val {
+            "0" => Ok(OptimizationLevel::Off),
+            "1" => Ok(OptimizationLevel::Speed),
+            _ => Err(()),
+        }
+    }
+}
+
 /// Precompile the program into an appropriate in-memory representation
-pub fn precompile<'a, I>(bytes: I) -> Vec<Instruction>
+pub fn precompile<'a, I>(bytes: I, opt: OptimizationLevel) -> Vec<Instruction>
     where I: IntoIterator<Item=&'a u8> {
     let mut jump_stack = VecDeque::with_capacity(15);
     bytes.into_iter().map(|&c|
