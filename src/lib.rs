@@ -179,7 +179,7 @@ pub fn interpret<OutFile>(program: Vec<Instruction>, mut out: OutFile, debug: bo
                     p = 0;
                 }
                 else {
-                    p -= 1;
+                    p -= amount;
                 }
             },
             Instruction::Increment(amount) => buffer[p] = buffer[p].wrapping_add(amount as u8),
