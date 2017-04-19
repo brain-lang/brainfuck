@@ -68,6 +68,7 @@ impl fmt::Display for Instruction {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum OptimizationLevel {
     // Do not optimize
     Off,
@@ -90,31 +91,55 @@ impl FromStr for OptimizationLevel {
 /// Precompile the program into an appropriate in-memory representation
 pub fn precompile<'a, I>(bytes: I, opt: OptimizationLevel) -> Vec<Instruction>
     where I: IntoIterator<Item=&'a u8> {
+    use self::Instruction::*;
+
+    let should_group = opt == OptimizationLevel::Speed;
+
+    let mut input = bytes.into_iter().peekable();
+    let mut instructions = VecDeque::new();
+    while let Some(next_ch) = input.next() {
+        let mut count = 1;
+        if should_group {
+            while let Some(&ch) = input.peek() {
+                if ch == next_ch {
+                    count += 1;
+                    input.next();
+                }
+                else {
+                    break;
+                }
+            }
+        }
+
+        match *next_ch {
+            b'>' => instructions.push_back(Instruction::Right(count)),
+            b'<' => instructions.push_back(Instruction::Left(count)),
+            b'+' => instructions.push_back(Instruction::Increment(count)),
+            b'-' => instructions.push_back(Instruction::Decrement(count)),
+            b'.' => instructions.extend(repeat(Instruction::Write).take(count)),
+            b',' => instructions.extend(repeat(Instruction::Read).take(count)),
+            b'[' => instructions.extend(repeat(Instruction::JumpForwardIfZero {matching: None}).take(count)),
+            b']' => instructions.extend(repeat(Instruction::JumpBackwardUnlessZero {matching: 0}).take(count)),
+            _ => continue,
+        };
+    }
+
     // We typically don't expect to see more than this many levels of nested jumps
     // based on an analysis of some brainfuck programs
     let mut jump_stack = VecDeque::with_capacity(15);
-    bytes.into_iter().map(|&c|
+
+    instructions.into_iter().enumerate().map(|(i, c)|
         match c {
-            b'>' => Some(Instruction::Right(1)),
-            b'<' => Some(Instruction::Left(1)),
-            b'+' => Some(Instruction::Increment(1)),
-            b'-' => Some(Instruction::Decrement(1)),
-            b'.' => Some(Instruction::Write),
-            b',' => Some(Instruction::Read),
-            b'[' => Some(Instruction::JumpForwardIfZero {matching: None}),
-            b']' => Some(Instruction::JumpBackwardUnlessZero {matching: 0}),
-            _ => None,
-        }
-    ).filter(|c| c.is_some()).map(|c| c.unwrap()).enumerate().map(|(i, c)|
-        match c {
-            Instruction::JumpForwardIfZero { .. } => {
+            JumpForwardIfZero { .. } => {
                 jump_stack.push_back(i);
                 c
             },
-            Instruction::JumpBackwardUnlessZero { .. } => {
+            JumpBackwardUnlessZero { .. } => {
                 let matching = jump_stack.pop_back()
-                    .expect(&format!("Mismatched jump instruction at position {}", i + 1));
-                Instruction::JumpBackwardUnlessZero {matching: matching + 1}
+                    .expect(&format!("Mismatched jump instruction"));
+                // When jumping backward, jump one further than the matching [ instruction
+                // This avoids an extra jump test
+                JumpBackwardUnlessZero {matching: matching + 1}
             }
             _ => c,
         }
