@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Nothing...yet.
+
+## [1.2.0] - 2017-04-19
+### Added
 - Optimizations on by default
   - This is an interpreter designed to run code fast, simulating a brainfuck
     turing machine exactly is not necessarily in service of that
@@ -48,7 +52,8 @@ The `examples/mandel.bf` program went from 2m19s to 1m46s reproducibly on
 - Stable, reasonably performant brainfuck interpreter implementing all aspects
   of the specification
 
-[Unreleased]: https://github.com/brain-lang/brainfuck/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/brain-lang/brainfuck/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/brain-lang/brainfuck/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/brain-lang/brainfuck/compare/v1.1.0...v1.1.2
 [1.1.1]: https://github.com/brain-lang/brainfuck/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/brain-lang/brainfuck/compare/v1.0.0...v1.1.0
