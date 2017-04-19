@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
-- Nothing...yet.
+- Tests! Lots of tests! The code is now nicely split up between modules too.
+
+### Fixed
+- Fixed a bug that was resulting in some cases of mismatched jump instructions
+  not being reported as an error.
 
 ## [1.2.0] - 2017-04-19
 ### Added
