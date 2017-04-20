@@ -14,7 +14,7 @@ if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS
     git checkout "${TRAVIS_PULL_REQUEST_BRANCH:-master}" && \
     cargo bench | tee previous-benchmark && \
     # Bench the current commit that was pushed
-    git checkout ${TRAVIS_COMMIT} && \
+    git checkout ${TRAVIS_BRANCH} && \
     cargo bench | tee current-benchmark && \
     cargo install cargo-benchcmp --force && \
     cargo benchcmp previous-benchmark current-benchmark;
