@@ -1,9 +1,10 @@
 sudo: false
 language: rust
 cache:
-  - cargo
   directories:
-    - ../kcov
+  - ../kcov
+  - $HOME/.cargo
+  - $TRAVIS_BUILD_DIR/target
 # Dependencies of kcov, used by coverage
 addons:
   apt:
