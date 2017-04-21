@@ -28,7 +28,7 @@ before_script:
       export PATH=$HOME/.cargo/bin:$PATH
 script:
   - cargo build --verbose
-  - cargo coverage --verbose
+  - cargo coverage --verbose || true
   - cargo doc --verbose
 after_success:
   - |
