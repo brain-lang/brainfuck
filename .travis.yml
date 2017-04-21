@@ -27,7 +27,7 @@ script:
   - |
       cargo build --verbose &&
       cargo test --verbose &&
-      cargo --only stable doc
+      cargo +stable doc
 after_success:
   - |
       cargo coverage -m ../kcov --all
