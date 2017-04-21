@@ -24,10 +24,9 @@ before_script:
       cargo install cargo-travis;
       export PATH=$HOME/.cargo/bin:$PATH
 script:
-  - |
-      cargo build --verbose &&
-      cargo test --verbose &&
-      cargo +stable doc
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo doc --verbose
 after_success:
   - |
       cargo coverage -m ../kcov --all
