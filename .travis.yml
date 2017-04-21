@@ -1,10 +1,6 @@
 sudo: false
 language: rust
-cache:
-  directories:
-  - ../kcov
-  - $HOME/.cargo
-  - $TRAVIS_BUILD_DIR/target
+cache: cargo
 # Dependencies of kcov, used by coverage
 addons:
   apt:
@@ -29,10 +25,9 @@ before_script:
       export PATH=$HOME/.cargo/bin:$PATH
 script:
   - cargo build --verbose
-  - cargo test --verbose
+  - cargo coverage --verbose
   - cargo doc --verbose
 after_success:
   - |
-      cargo coverage -m ../kcov --all
       bash <(curl -s https://codecov.io/bash)
       ./travis-after-success.sh
