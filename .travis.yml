@@ -1,5 +1,17 @@
+sudo: false
 language: rust
 cache: cargo
+# Dependencies of kcov, used by coverage
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - binutils-dev
+      - cmake
+    sources:
+      - kalakris-cmake
 rust:
   - stable
   - beta
@@ -7,5 +19,17 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
+before_script:
+  - |
+      cargo install cargo-travis &&
+      export PATH=$HOME/.cargo/bin:$PATH
+script:
+  - |
+      cargo build --verbose &&
+      cargo test --verbose &&
+      cargo --only stable doc
 after_success:
-  - ./travis-after-success.sh
+  - |
+      cargo coverage -m ../kcov --all
+      bash <(curl -s https://codecov.io/bash)
+      ./travis-after-success.sh
