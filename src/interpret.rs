@@ -236,8 +236,35 @@ mod tests {
             Increment(1),
             Decrement(2),
             Write,
-            //Read,
+            Read,
             JumpBackwardUnlessZero {matching: 1},
+        ]), vec![]);
+    }
+
+    #[test]
+    fn basic_looping() {
+        // This loop increments cell index 1 using cell index 0 as a loop counter
+        // The result is x * y
+        let x = 13;
+        let y = 15;
+        assert_eq!(test_interpret_output(vec![
+            Increment(x),
+            JumpForwardIfZero {matching: None},
+            Right(1),
+            Increment(y),
+            Left(1),
+            Decrement(1),
+            JumpBackwardUnlessZero {matching: 2},
+            Right(1),
+            Write,
+        ]), vec![(x * y) as u8]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Mismatched `[` instruction")]
+    fn mismatched_jumps() {
+        assert_eq!(test_interpret_output(vec![
+            JumpForwardIfZero {matching: None},
         ]), vec![]);
     }
 
