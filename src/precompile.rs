@@ -1,13 +1,7 @@
 use std::collections::VecDeque;
 use std::iter::repeat;
 
-use super::{OptimizationLevel, Instruction};
-
-// We typically don't expect to see more than this many levels of nested jumps
-// based on an analysis of some brainfuck programs
-// More than this many is okay, we just preallocate this many to avoid the cost of
-// allocating later.
-const MAX_NESTED_JUMPS: usize = 15;
+use super::{OptimizationLevel, Instruction, MAX_NESTED_JUMPS};
 
 /// Precompile the program into an appropriate in-memory representation
 pub fn precompile<'a, I>(bytes: I, opt: OptimizationLevel) -> Vec<Instruction>

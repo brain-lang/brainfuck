@@ -105,7 +105,8 @@ impl<I: Read, O: Write, E: Write> Interpreter<I, O, E> {
 /// # Panics
 /// Panics if a match is not found
 fn fill_matching(mut program: &mut Vec<Instruction>, start: usize) -> usize {
-    let mut jumps = VecDeque::new();
+    use super::MAX_NESTED_JUMPS;
+    let mut jumps = VecDeque::with_capacity(MAX_NESTED_JUMPS);
 
     let program_size = program.len();
     let mut current = start;
