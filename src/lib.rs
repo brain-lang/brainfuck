@@ -1,12 +1,12 @@
 mod instruction;
 mod optlevel;
-mod precompile;
-mod interpret;
+mod precompiler;
+mod interpreter;
 
 pub use instruction::*;
 pub use optlevel::*;
-pub use precompile::*;
-pub use interpret::*;
+pub use precompiler::*;
+pub use interpreter::*;
 
 // We typically don't expect to see more than this many levels of nested jumps
 // based on an analysis of some brainfuck programs
