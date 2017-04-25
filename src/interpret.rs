@@ -242,6 +242,53 @@ mod tests {
     }
 
     #[test]
+    fn reading_input() {
+        assert_eq!(test_interpret_with_input(vec![
+            Write,
+            Read,
+            Write,
+            Decrement(1),
+            Write,
+            Read,
+            Write,
+            Increment(1),
+            Write,
+            Right(1),
+            Read, // reads should overwrite each other
+            Read,
+            Right(1),
+            Read,
+            Right(1),
+            Read,
+            Left(2),
+            Write,
+            Right(1),
+            Write,
+            Right(1),
+            Write,
+            Left(3), // should not have changed
+            Write,
+            Read, // All reads past the end of input should result in 0
+            Write,
+            Read,
+            Read,
+            Read,
+            Read,
+            Read,
+            Read,
+            Read,
+            Write,
+        ], &[ // input
+            5,
+            0,
+            8,
+            17,
+            32,
+            49,
+        ]), vec![0, 5, 4, 0, 1, 17, 32, 49, 1, 0, 0]);
+    }
+
+    #[test]
     fn basic_looping() {
         // This loop increments cell index 1 using cell index 0 as a loop counter
         // The result is x * y
@@ -269,7 +316,11 @@ mod tests {
     }
 
     fn test_interpret_output(program: Vec<Instruction>) -> Vec<u8> {
-        let mut inp: &[u8] = &[];
+        let inp: &[u8] = &[];
+        test_interpret_with_input(program, inp)
+    }
+
+    fn test_interpret_with_input(program: Vec<Instruction>, mut inp: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
         let mut err = Vec::new();
         Interpreter::from_streams(&mut inp, &mut out, &mut err).interpret(program);
