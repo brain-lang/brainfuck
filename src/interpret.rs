@@ -15,7 +15,7 @@ pub struct Interpreter<I: Read, O: Write, E: Write> {
 
 impl<I: Read, O: Write, E: Write> Interpreter<I, O, E> {
     pub fn new(inp: I, out: O, err: E, debug: bool, delay: u64) -> Interpreter<I, O, E> {
-        Interpreter {inp, out, err, debug, delay}
+        Interpreter {inp: inp, out: out, err: err, debug: debug, delay: delay}
     }
 
     /// Constructs an Interpreter with just streams and using the default values for other
