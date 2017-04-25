@@ -3,16 +3,25 @@
 #[macro_use]
 extern crate clap;
 
-#[macro_use]
 extern crate brainfuck;
 
 use std::path::{Path};
 use std::fs::File;
+use std::io;
 use std::io::prelude::*;
 
 use clap::{Arg, App};
 
-use brainfuck::{precompile, interpret};
+use brainfuck::{precompile, Interpreter};
+
+macro_rules! exit_with_error(
+    ($($arg:tt)*) => { {
+        use std::process;
+        writeln!(&mut ::std::io::stderr(), $($arg)*)
+            .expect("Failed while printing to stderr");
+        process::exit(1);
+    } }
+);
 
 fn main() {
     let args = App::new(crate_name!())
@@ -71,5 +80,11 @@ fn main() {
     let mut bytes = Vec::new();
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
     let program = precompile(bytes.iter(), opt);
-    interpret(program, ::std::io::stdout(), debug_mode, delay);
+    Interpreter::new(
+        io::stdin(),
+        io::stdout(),
+        io::stderr(),
+        debug_mode,
+        delay,
+    ).interpret(program);
 }
