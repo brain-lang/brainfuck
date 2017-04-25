@@ -12,10 +12,10 @@ if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS
     git clone ${REMOTE_URL} "${TRAVIS_REPO_SLUG}-bench" && \
     cd  "${TRAVIS_REPO_SLUG}-bench" && \
     # Bench the pull request base or master
-    git checkout "${TRAVIS_PULL_REQUEST_BRANCH:-master}" && \
+    git checkout -f "${TRAVIS_PULL_REQUEST_BRANCH:-master}" && \
     cargo bench --verbose | tee previous-benchmark && \
     # Bench the current commit that was pushed
-    git checkout ${TRAVIS_BRANCH} && \
+    git checkout -f ${TRAVIS_BRANCH} && \
     cargo bench --verbose | tee current-benchmark && \
     cargo benchcmp previous-benchmark current-benchmark;
 fi
