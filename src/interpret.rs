@@ -310,9 +310,9 @@ mod tests {
     #[test]
     #[should_panic(expected = "Mismatched `[` instruction")]
     fn mismatched_jumps() {
-        assert_eq!(test_interpret_output(vec![
+        test_interpret_output(vec![
             JumpForwardIfZero {matching: None},
-        ]), vec![]);
+        ]);
     }
 
     fn test_interpret_output(program: Vec<Instruction>) -> Vec<u8> {
