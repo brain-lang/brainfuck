@@ -8,7 +8,7 @@ extern crate brainfuck;
 
 use test::Bencher;
 
-use brainfuck::{precompile, interpret, OptimizationLevel};
+use brainfuck::{precompile, Interpreter, Instruction, OptimizationLevel};
 
 lazy_static! {
     // This program is trivial to run in both size and speed
@@ -33,6 +33,11 @@ impl std::io::Write for NullWrite {
     fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
+}
+
+fn interpret(program: Vec<Instruction>) {
+    let mut inp: &[u8] = &[];
+    Interpreter::from_streams(&mut inp, &mut NullWrite, &mut NullWrite).interpret(program);
 }
 
 #[bench]
@@ -88,37 +93,37 @@ fn b05_compile_slow_opt(b: &mut Bencher) {
 #[bench]
 fn b06_interpret_trivial(b: &mut Bencher) {
     let program = precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Off);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
 
 #[bench]
 fn b06_interpret_trivial_opt(b: &mut Bencher) {
     let program = precompile(TRIVIAL_SOURCE.iter(), OptimizationLevel::Speed);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
 
 #[bench]
 fn b07_interpret_simple(b: &mut Bencher) {
     let program = precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Off);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
 
 #[bench]
 fn b07_interpret_simple_opt(b: &mut Bencher) {
     let program = precompile(SIMPLE_SOURCE.iter(), OptimizationLevel::Speed);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
 
 #[bench]
 #[ignore]
 fn b08_interpret_slow(b: &mut Bencher) {
     let program = precompile(SLOW_SOURCE.iter(), OptimizationLevel::Off);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
 
 #[bench]
 #[ignore]
 fn b08_interpret_slow_opt(b: &mut Bencher) {
     let program = precompile(SLOW_SOURCE.iter(), OptimizationLevel::Speed);
-    b.iter(|| interpret(program.clone(), NullWrite, false, 0));
+    b.iter(|| interpret(program.clone()));
 }
