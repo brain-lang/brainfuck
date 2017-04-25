@@ -334,6 +334,21 @@ mod tests {
     }
 
     #[test]
+    fn hello_world() {
+        use super::super::{precompile, OptimizationLevel};
+
+        // hello world program from examples/hello-world.bf
+        let source: Vec<u8> = include_bytes!("../examples/hello-world.bf").to_vec();
+        let program = precompile(source.iter(), OptimizationLevel::Off);
+        assert_eq!(test_interpret_output(program),
+            b"Hello World!\n");
+
+        let program = precompile(source.iter(), OptimizationLevel::Speed);
+        assert_eq!(test_interpret_output(program),
+            b"Hello World!\n");
+    }
+
+    #[test]
     #[should_panic(expected = "Mismatched `[` instruction")]
     fn mismatched_jumps() {
         test_interpret_output(vec![
