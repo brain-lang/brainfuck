@@ -1,4 +1,3 @@
-use std::io;
 use std::io::prelude::*;
 use std::collections::VecDeque;
 use std::thread;
@@ -6,72 +5,96 @@ use std::time::Duration;
 
 use super::Instruction;
 
-pub fn interpret<OutFile>(mut program: Vec<Instruction>, mut out: OutFile, debug: bool, delay: u64)
-    where OutFile: Write {
-    let mut buffer: VecDeque<u8> = VecDeque::new();
-    // Make sure there is at least one cell to begin with
-    buffer.push_back(0u8);
+pub struct Interpreter<I: Read, O: Write, E: Write> {
+    inp: I,
+    out: O,
+    err: E,
+    debug: bool,
+    delay: u64,
+}
 
-    // p is the position "pointer" in the buffer
-    let mut p: usize = 0;
-    // i is the instruction index in the program
-    let mut i: usize = 0;
+impl<I: Read, O: Write, E: Write> Interpreter<I, O, E> {
+    pub fn new(inp: I, out: O, err: E, debug: bool, delay: u64) -> Interpreter<I, O, E> {
+        Interpreter {inp: inp, out: out, err: err, debug: debug, delay: delay}
+    }
 
-    loop {
-        if i >= program.len() {
-            break;
-        }
-        let mut instr = program[i];
-        i += 1;
+    /// Constructs an Interpreter with just streams and using the default values for other
+    /// properties
+    pub fn from_streams(input: I, output: O, error: E) -> Interpreter<I, O, E> {
+        Interpreter::new(input, output, error, false, 0)
+    }
 
-        match instr {
-            Instruction::Right(amount) => {
-                p += amount;
-                while p >= buffer.len() {
-                    buffer.push_back(0u8);
-                }
-            },
-            Instruction::Left(amount) => {
-                if amount > p {
-                    for _ in 0..(amount - p) {
-                        buffer.push_front(0u8);
+    pub fn interpret(mut self, mut program: Vec<Instruction>) {
+        let mut buffer: VecDeque<u8> = VecDeque::new();
+        // Make sure there is at least one cell to begin with
+        buffer.push_back(0u8);
+
+        // p is the position "pointer" in the buffer
+        let mut p: usize = 0;
+        // i is the instruction index in the program
+        let mut i: usize = 0;
+
+        loop {
+            if i >= program.len() {
+                break;
+            }
+            let mut instr = program[i];
+            i += 1;
+
+            match instr {
+                Instruction::Right(amount) => {
+                    p += amount;
+                    while p >= buffer.len() {
+                        buffer.push_back(0u8);
                     }
-                    p = 0;
-                }
-                else {
-                    p -= amount;
-                }
-            },
-            Instruction::Increment(amount) => buffer[p] = buffer[p].wrapping_add(amount as u8),
-            Instruction::Decrement(amount) => buffer[p] = buffer[p].wrapping_sub(amount as u8),
-            Instruction::Write => out.write_all(&[buffer[p]]).expect("Could not output"),
-            Instruction::Read => {
-                let chr = io::stdin().bytes().next();
-                if chr.is_none() {
-                    buffer[p] = 0;
-                }
-                else {
-                    buffer[p] = chr.unwrap().expect("Could not read input");
-                }
-            },
-            Instruction::JumpForwardIfZero {ref mut matching} => {
-                if buffer[p] == 0 {
-                    i = matching.unwrap_or_else(|| fill_matching(&mut program, i - 1));
-                }
-            },
-            Instruction::JumpBackwardUnlessZero {matching} => {
-                if buffer[p] != 0 {
-                    i = matching;
-                }
-            },
-        }
+                },
+                Instruction::Left(amount) => {
+                    if amount > p {
+                        for _ in 0..(amount - p) {
+                            buffer.push_front(0u8);
+                        }
+                        p = 0;
+                    }
+                    else {
+                        p -= amount;
+                    }
+                },
+                Instruction::Increment(amount) => buffer[p] = buffer[p].wrapping_add(amount as u8),
+                Instruction::Decrement(amount) => buffer[p] = buffer[p].wrapping_sub(amount as u8),
+                Instruction::Write => self.out.write_all(&[buffer[p]]).expect("Could not output"),
+                Instruction::Read => {
+                    let mut inbuffer: [u8; 1] = [0];
+                    let res = self.inp.read_exact(&mut inbuffer[0..1]);
+                    if res.is_ok() {
+                        buffer[p] = inbuffer[0];
+                    }
+                    else {
+                        buffer[p] = 0;
+                    }
+                },
+                Instruction::JumpForwardIfZero {ref mut matching} => {
+                    if buffer[p] == 0 {
+                        i = matching.unwrap_or_else(|| fill_matching(&mut program, i - 1));
+                    }
+                },
+                Instruction::JumpBackwardUnlessZero {matching} => {
+                    if buffer[p] != 0 {
+                        i = matching;
+                    }
+                },
+            }
 
-        if debug {
-            println_stderr!("{{\"lastInstructionIndex\": {}, \"lastInstruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}", i-1, instr, p,
-                buffer.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v)));
-        }
+            if self.debug {
+                writeln!(
+                    &mut self.err,
+                    "{{\"lastInstructionIndex\": {}, \"lastInstruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}",
+                    i-1, instr, p,
+                    buffer.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
+                ).expect("failed printing to stderr");
+            }
 
-        thread::sleep(Duration::from_millis(delay));
+            thread::sleep(Duration::from_millis(self.delay));
+        }
     }
 }
 
@@ -125,8 +148,7 @@ mod tests {
     #[test]
     fn basic_movements() {
         // Test to make sure basic movements are working
-        let mut out = Vec::new();
-        interpret(vec![
+        assert_eq!(test_interpret_output(vec![
             Increment(1),
             Right(1),
             Increment(2),
@@ -137,15 +159,12 @@ mod tests {
             Write,
             Left(1),
             Write,
-        ], &mut out, false, 0);
-
-        assert_eq!(out, vec![3, 2, 1])
+        ]), vec![3, 2, 1]);
     }
 
     #[test]
     fn wrapping() {
-        let mut out = Vec::new();
-        interpret(vec![
+        assert_eq!(test_interpret_output(vec![
             Write,
             Decrement(1),
             Write,
@@ -169,9 +188,7 @@ mod tests {
             Write,
             Decrement(255 * 2),
             Write,
-        ], &mut out, false, 0);
-
-        assert_eq!(out, vec![0, 255, 1, 1, 2, 1, 0, 255, 0, 1, 255, 1])
+        ]), vec![0, 255, 1, 1, 2, 1, 0, 255, 0, 1, 255, 1]);
     }
 
     #[test]
@@ -179,8 +196,7 @@ mod tests {
         // These movements are designed to cause problems if the move instructions are not
         // implemented correctly. If all goes well, the code should end up back at the same spot
         // in the brainfuck tape.
-        let mut out = Vec::new();
-        interpret(vec![
+        assert_eq!(test_interpret_output(vec![
             Increment(1),
             Right(1),
             Left(4),
@@ -189,15 +205,12 @@ mod tests {
             Right(3),
             Increment(1),
             Write,
-        ], &mut out, false, 0);
-
-        assert_eq!(out, vec![2])
+        ]), vec![2]);
     }
 
     #[test]
     fn move_right_past_capacity() {
-        let mut out = Vec::new();
-        interpret(vec![
+        assert_eq!(test_interpret_output(vec![
             Increment(1),
             Right(10),
             // If we don't grow the buffer properly, this will fail
@@ -209,17 +222,14 @@ mod tests {
             Left(15),
             Increment(1),
             Write,
-        ], &mut out, false, 0);
-
-        assert_eq!(out, vec![2])
+        ]), vec![2]);
     }
 
     #[test]
     fn skip_first_loop() {
         // Any complient brainfuck implementation should always skip the first loop no matter what
         // instructions are in it
-        let mut out = Vec::new();
-        interpret(vec![
+        assert_eq!(test_interpret_output(vec![
             JumpForwardIfZero {matching: None},
             Right(1),
             Left(1),
@@ -228,8 +238,17 @@ mod tests {
             Write,
             //Read,
             JumpBackwardUnlessZero {matching: 1},
-        ], &mut out, false, 0);
+        ]), vec![]);
+    }
 
-        assert_eq!(out, vec![])
+    fn test_interpret_output(program: Vec<Instruction>) -> Vec<u8> {
+        let mut inp: &[u8] = &[];
+        let mut out = Vec::new();
+        let mut err = Vec::new();
+        Interpreter::from_streams(&mut inp, &mut out, &mut err).interpret(program);
+
+        // This way errors will get caught in the output testing
+        out.extend(err);
+        out
     }
 }
