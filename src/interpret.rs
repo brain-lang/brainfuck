@@ -308,6 +308,32 @@ mod tests {
     }
 
     #[test]
+    fn nested_loops() {
+        // The result of this is x * y * z
+        // Note that 13 * 15 * 2 = 390 which overflows since 390 > 255
+        let x = 13;
+        let y = 15;
+        let z = 2;
+        assert_eq!(test_interpret_output(vec![
+            Increment(x),
+            JumpForwardIfZero {matching: None},
+            Right(1),
+            Increment(y),
+            JumpForwardIfZero {matching: None},
+            Right(1),
+            Increment(z),
+            Left(1),
+            Decrement(1),
+            JumpBackwardUnlessZero {matching: 5},
+            Left(1),
+            Decrement(1),
+            JumpBackwardUnlessZero {matching: 2},
+            Right(2),
+            Write,
+        ]), vec![(x * y * z) as u8]);
+    }
+
+    #[test]
     #[should_panic(expected = "Mismatched `[` instruction")]
     fn mismatched_jumps() {
         test_interpret_output(vec![
