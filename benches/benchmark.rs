@@ -37,7 +37,7 @@ impl std::io::Write for NullWrite {
 
 fn interpret(program: Vec<Instruction>) {
     let mut inp: &[u8] = &[];
-    Interpreter::from_streams(&mut inp, &mut NullWrite, &mut NullWrite).interpret(program);
+    Interpreter::new(&mut inp, &mut NullWrite).interpret(program);
 }
 
 #[bench]
