@@ -31,7 +31,5 @@ script:
   - cargo test --verbose
   - cargo doc --verbose
 after_success:
-  - |
-      cargo coverage --verbose
-      bash <(curl -s https://codecov.io/bash)
-      ./travis-after-success.sh
+  - cargo coverage --verbose && bash <(curl -s https://codecov.io/bash)
+  - ./travis-after-success.sh
