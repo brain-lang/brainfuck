@@ -8,7 +8,7 @@ extern crate brainfuck;
 
 use test::Bencher;
 
-use brainfuck::{precompile, Interpreter, Instruction, OptimizationLevel};
+use brainfuck::{precompile, Instruction, OptimizationLevel};
 
 lazy_static! {
     // This program is trivial to run in both size and speed
@@ -37,7 +37,7 @@ impl std::io::Write for NullWrite {
 
 fn interpret(program: Vec<Instruction>) {
     let mut inp: &[u8] = &[];
-    Interpreter::from_streams(&mut inp, &mut NullWrite, &mut NullWrite).interpret(program);
+    brainfuck::interpret(&mut inp, NullWrite, program, |_| {});
 }
 
 #[bench]
