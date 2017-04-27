@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate clap;
+extern crate colored;
 
 extern crate brainfuck;
 
@@ -11,10 +12,12 @@ use std::io;
 use std::io::prelude::*;
 use std::thread;
 use std::time::Duration;
+use std::cmp::max;
 
+use colored::*;
 use clap::{Arg, App};
 
-use brainfuck::{precompile, interpret};
+use brainfuck::{precompile, interpret, DebugFormat, Instruction};
 
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
@@ -42,6 +45,13 @@ fn main() {
             .long("debug")
             .help("Enables debug mode which outputs debugging information to stderr")
         )
+        .arg(Arg::with_name("debug-format")
+            .long("debug-format")
+            .value_name("format")
+            .default_value("text")
+            .possible_values(&["text", "json"])
+            .help("The format of the debugging output")
+        )
         .arg(Arg::with_name("optimize")
             .short("O")
             .long("optimize")
@@ -65,6 +75,8 @@ fn main() {
     }
 
     let debug_mode = args.is_present("debug-enabled");
+    // We can call unwrap() because the validation is already done by clap
+    let debug_format = args.value_of("debug-format").unwrap().parse().unwrap();
 
     let delay: u64 = if let Some(delay_str) = args.value_of("delay") {
         delay_str.parse().unwrap_or_else(|e: std::num::ParseIntError| exit_with_error!("Invalid delay: {}", e))
@@ -83,17 +95,50 @@ fn main() {
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
     let program = precompile(bytes.iter(), opt);
 
-    // Based on debug_mode and delay, this will run one of three functions
+    // Based on debug_mode and delay, this will run one of several functions
     // If there is no delay and debug mode is off, performance is prioritized and the interpreter
     // should run at top speed
     let input = io::stdin();
     let output = io::stdout();
     if debug_mode {
-        interpret(
-            input,
-            output,
-            program,
-            |state| {
+        match debug_format {
+            DebugFormat::Text => {
+                use Instruction::*;
+
+                let instruction_width = program.iter().fold(1, |acc, ins| match *ins {
+                    Right(size) | Left(size) | Increment(size) | Decrement(size) => max(acc, size),
+                    Write | Read | JumpForwardIfZero { .. } | JumpBackwardUnlessZero { .. } => acc,
+                });
+                interpret(input, output, program, |state| {
+                    let pointer = state.current_pointer;
+
+                    writeln!(
+                        &mut io::stderr(),
+                        "{} {:instruction_width$}\n{}",
+                        format!("#{:03}", state.next_instruction).white(),
+                        state.last_instruction.map_or_else(|| " ".normal(), |instr| match instr {
+                            Right(..) | Left(..) => instr.to_string().on_blue(),
+                            Increment(..) | Decrement(..) => instr.to_string().on_green(),
+                            Write => instr.to_string().on_cyan(),
+                            Read => instr.to_string().on_yellow(),
+                            JumpForwardIfZero { .. } => instr.to_string().on_blue(),
+                            JumpBackwardUnlessZero { .. } => instr.to_string().on_blue(),
+                        }.bold()).to_string(),
+                        state.memory.iter().enumerate().fold(String::new(), |acc, (i, c)| {
+                            let mut cell = c.to_string().normal();
+                            if i == pointer {
+                                cell = cell.blue().bold();
+                            }
+                            format!("{} {:>3}", acc, cell)
+                        }),
+                        instruction_width = instruction_width,
+                    ).expect("failed to write debug output to stderr");
+
+                    thread::sleep(Duration::from_millis(delay));
+                });
+            },
+
+            DebugFormat::Json => interpret(input, output, program, |state| {
                 writeln!(
                     &mut io::stderr(),
                     "{{\"nextInstructionIndex\": {}, \"lastInstruction\": {}, \"currentPointer\": {}, \"memory\": \"{}\"}}",
@@ -104,8 +149,8 @@ fn main() {
                 ).expect("failed printing to stderr");
 
                 thread::sleep(Duration::from_millis(delay));
-            }
-        );
+            }),
+        }
     }
     // Need this condition because delay can be active without debug_mode
     else if delay > 0 {
