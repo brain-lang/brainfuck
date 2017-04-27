@@ -6,6 +6,8 @@ set -x
 if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
     REMOTE_URL="$(git config --get remote.origin.url)";
     cargo install cargo-benchcmp;
+    env | grep "TRAVIS_"
+
     # Clone the repository fresh..for some reason checking out master fails
     # from a normal PR build's provided directory
     cd ${TRAVIS_BUILD_DIR}/.. && \
