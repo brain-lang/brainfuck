@@ -82,12 +82,18 @@ fn main() {
     let mut bytes = Vec::new();
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
     let program = precompile(bytes.iter(), opt);
-    interpret(
-        io::stdin(),
-        io::stdout(),
-        program,
-        |state| {
-            if debug_mode {
+
+    // Based on debug_mode and delay, this will run one of three functions
+    // If there is no delay and debug mode is off, performance is prioritized and the interpreter
+    // should run at top speed
+    let input = io::stdin();
+    let output = io::stdout();
+    if debug_mode {
+        interpret(
+            input,
+            output,
+            program,
+            |state| {
                 writeln!(
                     &mut io::stderr(),
                     "{{\"nextInstructionIndex\": {}, \"lastInstruction\": {}, \"currentPointer\": {}, \"memory\": \"{}\"}}",
@@ -96,9 +102,16 @@ fn main() {
                     state.current_pointer,
                     state.memory.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
                 ).expect("failed printing to stderr");
-            }
 
-            thread::sleep(Duration::from_millis(delay));
-        }
-    );
+                thread::sleep(Duration::from_millis(delay));
+            }
+        );
+    }
+    // Need this condition because delay can be active without debug_mode
+    else if delay > 0 {
+        interpret(input, output, program, |_| thread::sleep(Duration::from_millis(delay)));
+    }
+    else {
+        interpret(input, output, program, |_| {});
+    }
 }
