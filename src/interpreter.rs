@@ -30,7 +30,7 @@ pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>,
     let mut next_instruction: usize = 0;
 
     callback(InterpreterState {
-        next_instruction: next_instruction,
+        next_instruction,
         last_instruction: None,
         current_pointer: pointer,
         memory: &buffer,
@@ -86,7 +86,7 @@ pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>,
         }
 
         callback(InterpreterState {
-            next_instruction: next_instruction,
+            next_instruction,
             last_instruction: Some(instr),
             current_pointer: pointer,
             memory: &buffer,
@@ -379,12 +379,7 @@ mod tests {
             (6, Some(JumpBackwardUnlessZero {matching: 4}), 0, vec![0, 0, 0, 0, 0, 0].into()),
         ];
         let mut states: VecDeque<_> = states.iter().map(|&(next_instruction, last_instruction, current_pointer, ref memory)| {
-            InterpreterState {
-                next_instruction: next_instruction,
-                last_instruction: last_instruction,
-                current_pointer: current_pointer,
-                memory: memory,
-            }
+            InterpreterState {next_instruction, last_instruction, current_pointer, memory}
         }).collect();
 
         interpret(&mut inp, &mut out, program, |state| {
