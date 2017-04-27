@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 
 use super::Instruction;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterState<'a> {
     /// Index of the next instruction to be run in the program
     pub next_instruction: usize,
@@ -140,6 +141,8 @@ fn fill_matching(mut program: &mut Vec<Instruction>, start: usize) -> usize {
 mod tests {
     use super::*;
     use super::super::Instruction::*;
+
+    use std::collections::VecDeque;
 
     #[test]
     fn basic_movements() {
@@ -350,6 +353,47 @@ mod tests {
         test_interpret_output(vec![
             JumpForwardIfZero {matching: None},
         ]);
+    }
+
+    #[test]
+    fn callback_behaviour() {
+        let mut inp: &[u8] = &[];
+        let mut out = Vec::new();
+        let program = vec![
+            Right(4),
+            Left(5),
+            Increment(2),
+            JumpForwardIfZero {matching: None},
+            Decrement(1),
+            JumpBackwardUnlessZero {matching: 4},
+        ];
+        let states = vec![
+            (0, None, 0, vec![0].into()),
+            (1, Some(Right(4)), 4, vec![0, 0, 0, 0, 0].into()),
+            (2, Some(Left(5)), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (3, Some(Increment(2)), 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (4, Some(JumpForwardIfZero {matching: None}), 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (5, Some(Decrement(1)), 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (4, Some(JumpBackwardUnlessZero {matching: 4}), 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (5, Some(Decrement(1)), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (6, Some(JumpBackwardUnlessZero {matching: 4}), 0, vec![0, 0, 0, 0, 0, 0].into()),
+        ];
+        let mut states: VecDeque<_> = states.iter().map(|&(next_instruction, last_instruction, current_pointer, ref memory)| {
+            InterpreterState {
+                next_instruction: next_instruction,
+                last_instruction: last_instruction,
+                current_pointer: current_pointer,
+                memory: memory,
+            }
+        }).collect();
+
+        interpret(&mut inp, &mut out, program, |state| {
+            let expected = states.pop_front().expect("callback was called unexpectedly");
+            assert_eq!(expected, state, "Failed with {} states left", states.len());
+        });
+
+        assert!(states.is_empty());
+        assert_eq!(out, vec![]);
     }
 
     fn test_interpret_output(program: Vec<Instruction>) -> Vec<u8> {
