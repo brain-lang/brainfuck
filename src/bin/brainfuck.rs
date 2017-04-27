@@ -9,10 +9,12 @@ use std::path::{Path};
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::thread;
+use std::time::Duration;
 
 use clap::{Arg, App};
 
-use brainfuck::{precompile, Interpreter};
+use brainfuck::{precompile, Interpreter, Instruction};
 
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
@@ -80,11 +82,29 @@ fn main() {
     let mut bytes = Vec::new();
     f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
     let program = precompile(bytes.iter(), opt);
-    Interpreter::new(
+    let mut interpreter = Interpreter::new(
         io::stdin(),
         io::stdout(),
-        io::stderr(),
-        debug_mode,
-        delay,
-    ).interpret(program);
+    );
+    interpreter.load_program(program);
+
+    debug_interpreter(debug_mode, &interpreter, None);
+    while let Some(instr) = interpreter.next() {
+        debug_interpreter(debug_mode, &interpreter, Some(instr));
+
+        thread::sleep(Duration::from_millis(delay));
+    }
+}
+
+fn debug_interpreter<I: Read, O: Write>(debug: bool, interpreter: &Interpreter<I, O>, instr: Option<Instruction>) {
+    if debug {
+        writeln!(
+            &mut io::stderr(),
+            "{{\"nextInstructionIndex\": {}, \"lastInstruction\": {}, \"currentPointer\": {}, \"memory\": \"{}\"}}",
+            interpreter.next_instruction(),
+            instr.map_or_else(|| "null".to_owned(), |instr| format!("\"{}\"", instr.to_string())),
+            interpreter.current_pointer(),
+            interpreter.memory().iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
+        ).expect("failed printing to stderr");
+    }
 }
