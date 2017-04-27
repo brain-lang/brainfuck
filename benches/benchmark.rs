@@ -122,6 +122,7 @@ fn b08_interpret_slow(b: &mut Bencher) {
 }
 
 #[bench]
+#[ignore]
 fn b08_interpret_slow_opt(b: &mut Bencher) {
     let program = precompile(SLOW_SOURCE.iter(), OptimizationLevel::Speed);
     b.iter(|| interpret(program.clone()));
