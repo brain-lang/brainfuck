@@ -1,5 +1,4 @@
 use std::fmt;
-use std::iter::repeat;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Instruction {
@@ -31,17 +30,22 @@ pub enum Instruction {
 
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            Instruction::Right(n) => repeat(">").take(n).collect(),
-            Instruction::Left(n) => repeat("<").take(n).collect(),
-            Instruction::Increment(n) => repeat("+").take(n).collect(),
-            Instruction::Decrement(n) => repeat("-").take(n).collect(),
+        f.write_str(match *self {
+            Instruction::Right(n) => format_instruction(">", n),
+            Instruction::Left(n) => format_instruction("<", n),
+            Instruction::Increment(n) => format_instruction("+", n),
+            Instruction::Decrement(n) => format_instruction("-", n),
             Instruction::Write => ".".to_owned(),
             Instruction::Read => ",".to_owned(),
             Instruction::JumpForwardIfZero { .. } => "[".to_owned(),
             Instruction::JumpBackwardUnlessZero { .. } => "]".to_owned(),
-        })
+        }.as_ref())
     }
+}
+
+#[inline]
+fn format_instruction(instr: &str, n: usize) -> String {
+    format!("{}{}", instr, if n > 1 {format!("{}", n)} else {"".to_owned()})
 }
 
 #[cfg(test)]

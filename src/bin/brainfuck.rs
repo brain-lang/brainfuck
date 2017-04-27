@@ -12,12 +12,11 @@ use std::io;
 use std::io::prelude::*;
 use std::thread;
 use std::time::Duration;
-use std::cmp::max;
 
 use colored::*;
 use clap::{Arg, App};
 
-use brainfuck::{precompile, interpret, DebugFormat, Instruction};
+use brainfuck::{precompile, interpret, DebugFormat, Instruction, OptimizationLevel};
 
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
@@ -105,25 +104,23 @@ fn main() {
             DebugFormat::Text => {
                 use Instruction::*;
 
-                let instruction_width = program.iter().fold(1, |acc, ins| match *ins {
-                    Right(size) | Left(size) | Increment(size) | Decrement(size) => max(acc, size),
-                    Write | Read | JumpForwardIfZero { .. } | JumpBackwardUnlessZero { .. } => acc,
-                });
+                let instruction_width = if opt == OptimizationLevel::Off { 1 } else { 4 };
                 interpret(input, output, program, |state| {
                     let pointer = state.current_pointer;
 
                     writeln!(
                         &mut io::stderr(),
-                        "{} {:instruction_width$}\n{}",
-                        format!("#{:03}", state.next_instruction).white(),
+                        "{} {:instruction_width$} {}",
+                        format!("#{:<3}", state.next_instruction).normal(),
                         state.last_instruction.map_or_else(|| " ".normal(), |instr| match instr {
-                            Right(..) | Left(..) => instr.to_string().on_blue(),
+                            Right(..) | Left(..) => instr.to_string().on_cyan(),
                             Increment(..) | Decrement(..) => instr.to_string().on_green(),
-                            Write => instr.to_string().on_cyan(),
+                            Write => instr.to_string().on_purple(),
                             Read => instr.to_string().on_yellow(),
-                            JumpForwardIfZero { .. } => instr.to_string().on_blue(),
-                            JumpBackwardUnlessZero { .. } => instr.to_string().on_blue(),
-                        }.bold()).to_string(),
+                            JumpForwardIfZero { .. } | JumpBackwardUnlessZero { .. } => {
+                                instr.to_string().on_blue()
+                            },
+                        }.bold()),
                         state.memory.iter().enumerate().fold(String::new(), |acc, (i, c)| {
                             let mut cell = c.to_string().normal();
                             if i == pointer {
