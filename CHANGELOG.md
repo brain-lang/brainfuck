@@ -7,22 +7,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### Added
+- Nothing...yet!
+
+## [1.3.0] - 2017-04-27
+### Added
 - Tests! Lots of tests! The code is now nicely split up between modules too.
+  - See [Codecov](https://codecov.io/gh/brain-lang/brainfuck) for the detailed
+    coverage report
 - Heavy optimizations resulting in `examples/mandel.bf` going from 46.404s to
   15.576s on @sunjay's machine.
+- Human readable debugging mode (see [video](http://imgur.com/6ob1T0H))
+  - This new format prints out the current state of the interpreter as
+    instructions run to show you what is happening with each instruction
+  - The format is colorful and hopefully a delight to use!
+  - Simply pass in `--debug` when running your program
+  - This is enabled **by default**, which means that you will need to use the
+    `--debug-format json` option to get the old debugging output back. This
+    change has already been made in the latest version of brain-lang/brain-debug.
+  - Use `--help` to see detailed descriptions of all the options that are available
 
 ### Fixed
 - Fixed a bug that was resulting in some cases of mismatched jump instructions
   not being reported as an error.
-- Realized that the output fields of `--debug` were absolutely incorrect. They
-  are now updated to reflect reality.
-  - The problem was that we were assuming the the previous instruction was one
-    less than the current one. However, based on how the interpreter actually
-    works, this is completely false. The variables being used in the debug
-    output should never have been reported that way. The new debug output is
-    accurate in that it reports the "next" instruction that will be processed.
-    We also now output the initial state of the interpreter so that a more
-    accurate picture of what is going on can be formed.
+- Incorrect debug output has now been corrected
+  - Previously, we were assuming that the previous instruction was one less than
+    the next instruction to be run. This is extremely inaccurate, especially for
+    jumps. The problem is resolved now and the debug output now correctly
+    reflects the actual behaviour of the interpreter.
 
 ## [1.2.0] - 2017-04-19
 ### Added
@@ -67,7 +78,8 @@ The `examples/mandel.bf` program went from 2m19s to 1m46s reproducibly on
 - Stable, reasonably performant brainfuck interpreter implementing all aspects
   of the specification
 
-[Unreleased]: https://github.com/brain-lang/brainfuck/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/brain-lang/brainfuck/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/brain-lang/brainfuck/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/brain-lang/brainfuck/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/brain-lang/brainfuck/compare/v1.1.0...v1.1.2
 [1.1.1]: https://github.com/brain-lang/brainfuck/compare/v1.1.0...v1.1.1
