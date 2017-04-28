@@ -16,7 +16,7 @@ use std::time::Duration;
 use colored::*;
 use clap::{Arg, App};
 
-use brainfuck::{precompile, interpret, DebugFormat, Instruction, OptimizationLevel};
+use brainfuck::{precompile, interpret, InterpreterState, DebugFormat, Instruction, OptimizationLevel};
 
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
@@ -102,51 +102,13 @@ fn main() {
     if debug_mode {
         match debug_format {
             DebugFormat::Text => {
-                use Instruction::*;
-
-                let instruction_width = if opt == OptimizationLevel::Off { 1 } else { 4 };
-                interpret(input, output, program, |state| {
-                    let pointer = state.current_pointer;
-
-                    writeln!(
-                        &mut io::stderr(),
-                        "{} {:instruction_width$} {}",
-                        format!("#{:<3}", state.next_instruction).normal(),
-                        state.last_instruction.map_or_else(|| " ".normal(), |instr| match instr {
-                            Right(..) | Left(..) => instr.to_string().on_cyan(),
-                            Increment(..) | Decrement(..) => instr.to_string().on_green(),
-                            Write => instr.to_string().on_purple(),
-                            Read => instr.to_string().on_yellow(),
-                            JumpForwardIfZero { .. } | JumpBackwardUnlessZero { .. } => {
-                                instr.to_string().on_blue()
-                            },
-                        }.bold()),
-                        state.memory.iter().enumerate().fold(String::new(), |acc, (i, c)| {
-                            let mut cell = c.to_string().normal();
-                            if i == pointer {
-                                cell = cell.blue().bold();
-                            }
-                            format!("{} {:>3}", acc, cell)
-                        }),
-                        instruction_width = instruction_width,
-                    ).expect("failed to write debug output to stderr");
-
-                    thread::sleep(Duration::from_millis(delay));
-                });
+                interpret(input, output, program, |state| format_human_readable(state, delay, match opt {
+                    OptimizationLevel::Off => 1,
+                    OptimizationLevel::Speed => 4,
+                }));
             },
 
-            DebugFormat::Json => interpret(input, output, program, |state| {
-                writeln!(
-                    &mut io::stderr(),
-                    "{{\"nextInstructionIndex\": {}, \"lastInstruction\": {}, \"currentPointer\": {}, \"memory\": \"{}\"}}",
-                    state.next_instruction,
-                    state.last_instruction.map_or_else(|| "null".to_owned(), |instr| format!("\"{}\"", instr.to_string())),
-                    state.current_pointer,
-                    state.memory.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
-                ).expect("failed printing to stderr");
-
-                thread::sleep(Duration::from_millis(delay));
-            }),
+            DebugFormat::Json => interpret(input, output, program, |state| format_json(state, delay)),
         }
     }
     // Need this condition because delay can be active without debug_mode
@@ -156,4 +118,58 @@ fn main() {
     else {
         interpret(input, output, program, |_| {});
     }
+}
+
+#[inline]
+fn format_human_readable(state: InterpreterState, delay: u64, instruction_width: usize) {
+    use Instruction::*;
+
+    let pointer = state.current_pointer;
+
+    let current_instruction = format!("#{:<3}", state.current_instruction);
+
+    let instr = state.instruction;
+    let instruction = match instr {
+        Right(..) | Left(..) => instr.to_string().on_cyan(),
+        Increment(..) | Decrement(..) => instr.to_string().on_green(),
+        Write => instr.to_string().on_purple(),
+        Read => instr.to_string().on_yellow(),
+        JumpForwardIfZero { .. } | JumpBackwardUnlessZero { .. } => {
+            instr.to_string().on_blue()
+        },
+    }.bold();
+
+    let memory = state.memory.iter().enumerate().fold(String::new(), |acc, (i, c)| {
+        let mut cell = c.to_string().normal();
+        if i == pointer {
+            cell = cell.blue().bold();
+        }
+        format!("{} {:>3}", acc, cell)
+    });
+
+    writeln!(
+        &mut io::stderr(),
+        "{} {:instruction_width$} {}",
+        current_instruction.normal(),
+        instruction,
+        memory,
+
+        instruction_width = instruction_width,
+    ).expect("failed to write debug output to stderr");
+
+    thread::sleep(Duration::from_millis(delay));
+}
+
+#[inline]
+fn format_json(state: InterpreterState, delay: u64) {
+    writeln!(
+        &mut io::stderr(),
+        "{{\"currentInstructionIndex\": {}, \"instruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}",
+        state.current_instruction,
+        state.instruction,
+        state.current_pointer,
+        state.memory.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
+    ).expect("failed printing to stderr");
+
+    thread::sleep(Duration::from_millis(delay));
 }
