@@ -3,6 +3,8 @@
 [![Crates.io](https://img.shields.io/crates/v/brain-brainfuck.svg)](https://crates.io/crates/brain-brainfuck)
 [![Crates.io](https://img.shields.io/crates/l/brain-brainfuck.svg)](https://crates.io/crates/brain-brainfuck)
 [![Build Status](https://travis-ci.org/brain-lang/brainfuck.svg?branch=master)](https://travis-ci.org/brain-lang/brainfuck)
+[![Build status](https://ci.appveyor.com/api/projects/status/ap7x7tmrwjj4v6xa?svg=true)](https://ci.appveyor.com/project/sunjay/brainfuck)
+[![Dependency Status](https://dependencyci.com/github/brain-lang/brainfuck/badge)](https://dependencyci.com/github/brain-lang/brainfuck)
 [![codecov](https://codecov.io/gh/brain-lang/brainfuck/branch/master/graph/badge.svg)](https://codecov.io/gh/brain-lang/brainfuck)
 [![Gitter](https://img.shields.io/gitter/room/brain-lang/brain.svg)](https://gitter.im/brain-lang/brain)
 
