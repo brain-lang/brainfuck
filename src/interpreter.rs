@@ -5,17 +5,19 @@ use super::Instruction;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterState<'a> {
-    /// Index of the next instruction to be run in the program
-    pub next_instruction: usize,
-    /// The last instruction that was run (only None at the start of the program)
-    pub last_instruction: Option<Instruction>,
+    /// index in the program of the instruction that was just run
+    /// Note that this instruction is computed *after* precompilation and so it may not
+    /// match the program file exactly
+    pub current_instruction: usize,
+    /// The instruction that was just run
+    pub instruction: Instruction,
     /// The current "pointer" value that represents the current cell in memory
     pub current_pointer: usize,
     /// The entire memory buffer (read-only)
     pub memory: &'a VecDeque<u8>,
 }
 
-/// callback is called once before any instructions, and after each instruction
+/// callback is called after each instruction
 pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>, mut callback: F)
     where I: Read, O: Write,
           F: FnMut(InterpreterState) {
@@ -29,17 +31,12 @@ pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>,
     // next_instruction is the instruction index in the program
     let mut next_instruction: usize = 0;
 
-    callback(InterpreterState {
-        next_instruction,
-        last_instruction: None,
-        current_pointer: pointer,
-        memory: &buffer,
-    });
     loop {
         if next_instruction >= program.len() {
             break;
         }
-        let mut instr = program[next_instruction];
+        let current_instruction = next_instruction;
+        let mut instr = program[current_instruction];
         next_instruction += 1;
 
         match instr {
@@ -86,8 +83,8 @@ pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>,
         }
 
         callback(InterpreterState {
-            next_instruction,
-            last_instruction: Some(instr),
+            current_instruction,
+            instruction: instr,
             current_pointer: pointer,
             memory: &buffer,
         });
@@ -368,18 +365,17 @@ mod tests {
             JumpBackwardUnlessZero {matching: 4},
         ];
         let states = vec![
-            (0, None, 0, vec![0].into()),
-            (1, Some(Right(4)), 4, vec![0, 0, 0, 0, 0].into()),
-            (2, Some(Left(5)), 0, vec![0, 0, 0, 0, 0, 0].into()),
-            (3, Some(Increment(2)), 0, vec![2, 0, 0, 0, 0, 0].into()),
-            (4, Some(JumpForwardIfZero {matching: None}), 0, vec![2, 0, 0, 0, 0, 0].into()),
-            (5, Some(Decrement(1)), 0, vec![1, 0, 0, 0, 0, 0].into()),
-            (4, Some(JumpBackwardUnlessZero {matching: 4}), 0, vec![1, 0, 0, 0, 0, 0].into()),
-            (5, Some(Decrement(1)), 0, vec![0, 0, 0, 0, 0, 0].into()),
-            (6, Some(JumpBackwardUnlessZero {matching: 4}), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (0, Right(4), 4, vec![0, 0, 0, 0, 0].into()),
+            (1, Left(5), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (2, Increment(2), 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (3, JumpForwardIfZero {matching: None}, 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (4, Decrement(1), 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (5, JumpBackwardUnlessZero {matching: 4}, 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (4, Decrement(1), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (5, JumpBackwardUnlessZero {matching: 4}, 0, vec![0, 0, 0, 0, 0, 0].into()),
         ];
-        let mut states: VecDeque<_> = states.iter().map(|&(next_instruction, last_instruction, current_pointer, ref memory)| {
-            InterpreterState {next_instruction, last_instruction, current_pointer, memory}
+        let mut states: VecDeque<_> = states.iter().map(|&(current_instruction, instruction, current_pointer, ref memory)| {
+            InterpreterState {current_instruction, instruction, current_pointer, memory}
         }).collect();
 
         interpret(&mut inp, &mut out, program, |state| {
