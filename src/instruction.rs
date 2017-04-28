@@ -55,20 +55,20 @@ mod tests {
     #[test]
     fn display() {
         assert_eq!(Instruction::Right(1).to_string(), ">");
-        assert_eq!(Instruction::Right(2).to_string(), ">>");
-        assert_eq!(Instruction::Right(5).to_string(), ">>>>>");
+        assert_eq!(Instruction::Right(2).to_string(), ">2");
+        assert_eq!(Instruction::Right(5).to_string(), ">5");
 
         assert_eq!(Instruction::Left(1).to_string(), "<");
-        assert_eq!(Instruction::Left(2).to_string(), "<<");
-        assert_eq!(Instruction::Left(5).to_string(), "<<<<<");
+        assert_eq!(Instruction::Left(2).to_string(), "<2");
+        assert_eq!(Instruction::Left(5).to_string(), "<5");
 
         assert_eq!(Instruction::Increment(1).to_string(), "+");
-        assert_eq!(Instruction::Increment(2).to_string(), "++");
-        assert_eq!(Instruction::Increment(5).to_string(), "+++++");
+        assert_eq!(Instruction::Increment(2).to_string(), "+2");
+        assert_eq!(Instruction::Increment(5).to_string(), "+5");
 
         assert_eq!(Instruction::Decrement(1).to_string(), "-");
-        assert_eq!(Instruction::Decrement(2).to_string(), "--");
-        assert_eq!(Instruction::Decrement(5).to_string(), "-----");
+        assert_eq!(Instruction::Decrement(2).to_string(), "-2");
+        assert_eq!(Instruction::Decrement(5).to_string(), "-5");
 
         assert_eq!(Instruction::Write.to_string(), ".");
         assert_eq!(Instruction::Read.to_string(), ",");
