@@ -1,100 +1,93 @@
-use std::io::prelude::*;
+use std::io::{Read, Write};
 use std::collections::VecDeque;
-use std::thread;
-use std::time::Duration;
 
 use super::Instruction;
 
-pub struct Interpreter<I: Read, O: Write, E: Write> {
-    inp: I,
-    out: O,
-    err: E,
-    debug: bool,
-    delay: u64,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InterpreterState<'a> {
+    /// index in the program of the instruction that was just run
+    /// Note that this instruction is computed *after* precompilation and so it may not
+    /// match the program file exactly
+    pub current_instruction: usize,
+    /// The instruction that was just run
+    pub instruction: Instruction,
+    /// The current "pointer" value that represents the current cell in memory
+    pub current_pointer: usize,
+    /// The entire memory buffer (read-only)
+    pub memory: &'a VecDeque<u8>,
 }
 
-impl<I: Read, O: Write, E: Write> Interpreter<I, O, E> {
-    pub fn new(inp: I, out: O, err: E, debug: bool, delay: u64) -> Interpreter<I, O, E> {
-        Interpreter {inp: inp, out: out, err: err, debug: debug, delay: delay}
-    }
+/// callback is called after each instruction
+pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>, mut callback: F)
+    where I: Read, O: Write,
+          F: FnMut(InterpreterState) {
 
-    /// Constructs an Interpreter with just streams and using the default values for other
-    /// properties
-    pub fn from_streams(input: I, output: O, error: E) -> Interpreter<I, O, E> {
-        Interpreter::new(input, output, error, false, 0)
-    }
+    let mut buffer: VecDeque<u8> = VecDeque::new();
+    // Make sure there is at least one cell to begin with
+    buffer.push_back(0u8);
 
-    pub fn interpret(mut self, mut program: Vec<Instruction>) {
-        let mut buffer: VecDeque<u8> = VecDeque::new();
-        // Make sure there is at least one cell to begin with
-        buffer.push_back(0u8);
+    // pointer is the position "pointer" in the buffer
+    let mut pointer: usize = 0;
+    // next_instruction is the instruction index in the program
+    let mut next_instruction: usize = 0;
 
-        // p is the position "pointer" in the buffer
-        let mut p: usize = 0;
-        // i is the instruction index in the program
-        let mut i: usize = 0;
-
-        loop {
-            if i >= program.len() {
-                break;
-            }
-            let mut instr = program[i];
-            i += 1;
-
-            match instr {
-                Instruction::Right(amount) => {
-                    p += amount;
-                    while p >= buffer.len() {
-                        buffer.push_back(0u8);
-                    }
-                },
-                Instruction::Left(amount) => {
-                    if amount > p {
-                        for _ in 0..(amount - p) {
-                            buffer.push_front(0u8);
-                        }
-                        p = 0;
-                    }
-                    else {
-                        p -= amount;
-                    }
-                },
-                Instruction::Increment(amount) => buffer[p] = buffer[p].wrapping_add(amount as u8),
-                Instruction::Decrement(amount) => buffer[p] = buffer[p].wrapping_sub(amount as u8),
-                Instruction::Write => self.out.write_all(&[buffer[p]]).expect("Could not output"),
-                Instruction::Read => {
-                    let mut inbuffer: [u8; 1] = [0];
-                    let res = self.inp.read_exact(&mut inbuffer[0..1]);
-                    if res.is_ok() {
-                        buffer[p] = inbuffer[0];
-                    }
-                    else {
-                        buffer[p] = 0;
-                    }
-                },
-                Instruction::JumpForwardIfZero {ref mut matching} => {
-                    if buffer[p] == 0 {
-                        i = matching.unwrap_or_else(|| fill_matching(&mut program, i - 1));
-                    }
-                },
-                Instruction::JumpBackwardUnlessZero {matching} => {
-                    if buffer[p] != 0 {
-                        i = matching;
-                    }
-                },
-            }
-
-            if self.debug {
-                writeln!(
-                    &mut self.err,
-                    "{{\"lastInstructionIndex\": {}, \"lastInstruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}",
-                    i-1, instr, p,
-                    buffer.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
-                ).expect("failed printing to stderr");
-            }
-
-            thread::sleep(Duration::from_millis(self.delay));
+    loop {
+        if next_instruction >= program.len() {
+            break;
         }
+        let current_instruction = next_instruction;
+        let mut instr = program[current_instruction];
+        next_instruction += 1;
+
+        match instr {
+            Instruction::Right(amount) => {
+                pointer += amount;
+                while pointer >= buffer.len() {
+                    buffer.push_back(0u8);
+                }
+            },
+            Instruction::Left(amount) => {
+                if amount > pointer {
+                    for _ in 0..(amount - pointer) {
+                        buffer.push_front(0u8);
+                    }
+                    pointer = 0;
+                }
+                else {
+                    pointer -= amount;
+                }
+            },
+            Instruction::Increment(amount) => buffer[pointer] = buffer[pointer].wrapping_add(amount as u8),
+            Instruction::Decrement(amount) => buffer[pointer] = buffer[pointer].wrapping_sub(amount as u8),
+            Instruction::Write => out.write_all(&[buffer[pointer]]).expect("Could not output"),
+            Instruction::Read => {
+                let mut inbuffer: [u8; 1] = [0];
+                let res = inp.read_exact(&mut inbuffer[0..1]);
+                if res.is_ok() {
+                    buffer[pointer] = inbuffer[0];
+                }
+                else {
+                    buffer[pointer] = 0;
+                }
+            },
+            Instruction::JumpForwardIfZero {ref mut matching} => {
+                if buffer[pointer] == 0 {
+                    next_instruction = matching.unwrap_or_else(|| fill_matching(&mut program, next_instruction - 1));
+                }
+            },
+            Instruction::JumpBackwardUnlessZero {matching} => {
+                if buffer[pointer] != 0 {
+                    next_instruction = matching;
+                }
+            },
+        }
+
+        callback(InterpreterState {
+            current_instruction,
+            instruction: instr,
+            current_pointer: pointer,
+            memory: &buffer,
+        });
     }
 }
 
@@ -145,6 +138,8 @@ fn fill_matching(mut program: &mut Vec<Instruction>, start: usize) -> usize {
 mod tests {
     use super::*;
     use super::super::Instruction::*;
+
+    use std::collections::VecDeque;
 
     #[test]
     fn basic_movements() {
@@ -357,6 +352,41 @@ mod tests {
         ]);
     }
 
+    #[test]
+    fn callback_behaviour() {
+        let mut inp: &[u8] = &[];
+        let mut out = Vec::new();
+        let program = vec![
+            Right(4),
+            Left(5),
+            Increment(2),
+            JumpForwardIfZero {matching: None},
+            Decrement(1),
+            JumpBackwardUnlessZero {matching: 4},
+        ];
+        let states = vec![
+            (0, Right(4), 4, vec![0, 0, 0, 0, 0].into()),
+            (1, Left(5), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (2, Increment(2), 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (3, JumpForwardIfZero {matching: None}, 0, vec![2, 0, 0, 0, 0, 0].into()),
+            (4, Decrement(1), 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (5, JumpBackwardUnlessZero {matching: 4}, 0, vec![1, 0, 0, 0, 0, 0].into()),
+            (4, Decrement(1), 0, vec![0, 0, 0, 0, 0, 0].into()),
+            (5, JumpBackwardUnlessZero {matching: 4}, 0, vec![0, 0, 0, 0, 0, 0].into()),
+        ];
+        let mut states: VecDeque<_> = states.iter().map(|&(current_instruction, instruction, current_pointer, ref memory)| {
+            InterpreterState {current_instruction, instruction, current_pointer, memory}
+        }).collect();
+
+        interpret(&mut inp, &mut out, program, |state| {
+            let expected = states.pop_front().expect("callback was called unexpectedly");
+            assert_eq!(expected, state, "Failed with {} states left", states.len());
+        });
+
+        assert!(states.is_empty());
+        assert_eq!(out, vec![]);
+    }
+
     fn test_interpret_output(program: Vec<Instruction>) -> Vec<u8> {
         let inp: &[u8] = &[];
         test_interpret_with_input(program, inp)
@@ -364,11 +394,7 @@ mod tests {
 
     fn test_interpret_with_input(program: Vec<Instruction>, mut inp: &[u8]) -> Vec<u8> {
         let mut out = Vec::new();
-        let mut err = Vec::new();
-        Interpreter::from_streams(&mut inp, &mut out, &mut err).interpret(program);
-
-        // This way errors will get caught in the output testing
-        out.extend(err);
+        interpret(&mut inp, &mut out, program, |_| {});
         out
     }
 }

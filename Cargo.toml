@@ -16,6 +16,7 @@ travis-ci = { repository = "brain-lang/brainfuck" }
 
 [dependencies]
 clap = "^2.0"
+colored = "^1.4"
 
 [dev-dependencies]
 lazy_static = "0.2"

@@ -8,10 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Tests! Lots of tests! The code is now nicely split up between modules too.
+- Heavy optimizations resulting in `examples/mandel.bf` going from 46.404s to
+  15.576s on @sunjay's machine.
 
 ### Fixed
 - Fixed a bug that was resulting in some cases of mismatched jump instructions
   not being reported as an error.
+- Realized that the output fields of `--debug` were absolutely incorrect. They
+  are now updated to reflect reality.
+  - The problem was that we were assuming the the previous instruction was one
+    less than the current one. However, based on how the interpreter actually
+    works, this is completely false. The variables being used in the debug
+    output should never have been reported that way. The new debug output is
+    accurate in that it reports the "next" instruction that will be processed.
+    We also now output the initial state of the interpreter so that a more
+    accurate picture of what is going on can be formed.
 
 ## [1.2.0] - 2017-04-19
 ### Added
