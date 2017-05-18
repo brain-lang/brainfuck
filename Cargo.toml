@@ -15,11 +15,11 @@ license = "MIT"
 travis-ci = { repository = "brain-lang/brainfuck" }
 
 [dependencies]
-clap = "^2.0"
-colored = "^1.4"
+clap = "*"
+colored = "*"
 
 [dev-dependencies]
-lazy_static = "0.2"
+lazy_static = "*"
 
 [[bin]]
 name = "brainfuck"
