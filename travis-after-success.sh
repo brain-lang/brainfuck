@@ -5,7 +5,7 @@ set -x
 
 if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS_RUST_VERSION" == "nightly" ]; then
     REMOTE_URL="$(git config --get remote.origin.url)"
-    cargo install cargo-benchcmp
+    cargo install -f cargo-benchcmp
 
     # Clone the repository fresh..for some reason checking out master fails
     # from a normal PR build's provided directory
@@ -42,5 +42,5 @@ if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" != "master" ] && [ "$TRAVIS
     # Bench the current commit that was pushed
     git checkout -f "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}"
     cargo bench --verbose | tee current-benchmark
-    cargo benchcmp previous-benchmark current-benchmark
+    cargo benchcmp --include-missing --variance previous-benchmark current-benchmark
 fi
