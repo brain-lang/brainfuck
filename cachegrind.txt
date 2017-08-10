@@ -1,0 +1,293 @@
+--------------------------------------------------------------------------------
+I1 cache:         32768 B, 64 B, 8-way associative
+D1 cache:         32768 B, 64 B, 8-way associative
+LL cache:         3145728 B, 64 B, 12-way associative
+Command:          target/release/brainfuck examples/mandel.bf
+Data file:        cachegrind.out.26586
+Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:     Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Thresholds:       0.1 100 100 100 100 100 100 100 100
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+            Ir  I1mr  ILmr             Dr       D1mr  DLmr      Dw   D1mw  DLmw 
+--------------------------------------------------------------------------------
+75,313,022,227 3,462 2,936 25,829,107,062 41,695,018 2,541 620,773 71,769 6,078  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+            Ir I1mr ILmr             Dr       D1mr  DLmr     Dw   D1mw  DLmw  file:function
+--------------------------------------------------------------------------------
+42,233,321,300    7    7 13,553,114,081 41,622,104     1 12,591 11,821     0  /home/sunjay/Documents/projects/brainfuck/src/interpreter.rs:brainfuck::main::h119b05aff045c4b6
+15,296,487,629   21   21  4,829,659,999          3     1  5,714      5     0  /checkout/src/libcollections/vec_deque.rs:brainfuck::main::h119b05aff045c4b6
+ 8,958,659,020   23   22  4,931,384,923          4     0  1,662      4     0  /home/sunjay/Documents/projects/brainfuck/src/bin/brainfuck.rs:brainfuck::main::h119b05aff045c4b6
+ 5,028,065,194    3    3    904,146,948          0     0      0      0     0  /checkout/src/libcore/num/mod.rs:brainfuck::main::h119b05aff045c4b6
+ 3,793,076,693    1    1  1,609,883,394          0     0      0      0     0  /checkout/src/libcore/option.rs:brainfuck::main::h119b05aff045c4b6
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /home/sunjay/Documents/projects/brainfuck/src/bin/brainfuck.rs
+--------------------------------------------------------------------------------
+           Ir I1mr ILmr            Dr D1mr DLmr    Dw D1mw DLmw 
+
+-- line 22 ----------------------------------------
+            .    .    .             .    .    .     .    .    .      ($($arg:tt)*) => { {
+            .    .    .             .    .    .     .    .    .          use std::process;
+            .    .    .             .    .    .     .    .    .          writeln!(&mut ::std::io::stderr(), $($arg)*)
+            .    .    .             .    .    .     .    .    .              .expect("Failed while printing to stderr");
+            .    .    .             .    .    .     .    .    .          process::exit(1);
+            .    .    .             .    .    .     .    .    .      } }
+            .    .    .             .    .    .     .    .    .  );
+            .    .    .             .    .    .     .    .    .  
+            2    1    1             0    0    0     1    0    0  fn main() {
+            3    1    1             0    0    0     1    0    0      let args = App::new(crate_name!())
+            .    .    .             .    .    .     .    .    .          .version(crate_version!())
+            .    .    .             .    .    .     .    .    .          .version_short("v")
+            .    .    .             .    .    .     .    .    .          .author(crate_authors!())
+            .    .    .             .    .    .     .    .    .          .about(crate_description!())
+           24    2    2             0    0    0     5    0    0          .arg(Arg::with_name("input-file")
+            .    .    .             .    .    .     .    .    .              .help("The brainfuck file to process. Should contain brainfuck instructions")
+            .    .    .             .    .    .     .    .    .              .value_name("file")
+            .    .    .             .    .    .     .    .    .              .takes_value(true)
+            .    .    .             .    .    .     .    .    .              .required(true)
+            .    .    .             .    .    .     .    .    .          )
+           20    2    2             0    0    0     4    0    0          .arg(Arg::with_name("debug-enabled")
+            .    .    .             .    .    .     .    .    .              .short("D")
+            .    .    .             .    .    .     .    .    .              .long("debug")
+            .    .    .             .    .    .     .    .    .              .help("Enables debug mode which outputs debugging information to stderr")
+            .    .    .             .    .    .     .    .    .          )
+           31    3    3             0    0    0     6    0    0          .arg(Arg::with_name("debug-format")
+            .    .    .             .    .    .     .    .    .              .long("debug-format")
+            .    .    .             .    .    .     .    .    .              .value_name("format")
+            .    .    .             .    .    .     .    .    .              .default_value("text")
+            .    .    .             .    .    .     .    .    .              .possible_values(&["text", "json"])
+            .    .    .             .    .    .     .    .    .              .help("The format of the debugging output")
+            .    .    .             .    .    .     .    .    .          )
+           44    3    3             0    0    0     9    0    0          .arg(Arg::with_name("optimize")
+            .    .    .             .    .    .     .    .    .              .short("O")
+            .    .    .             .    .    .     .    .    .              .long("optimize")
+            .    .    .             .    .    .     .    .    .              .value_name("opt-level")
+            .    .    .             .    .    .     .    .    .              // Do not optimize by default if debug is enabled
+            1    1    1             0    0    0     1    1    0              .default_value_if("debug-enabled", None, "0")
+            .    .    .             .    .    .     .    .    .              .default_value("1")
+            .    .    .             .    .    .     .    .    .              .possible_values(&["0", "1"])
+            .    .    .             .    .    .     .    .    .              .help("Optimize for execution speed")
+            .    .    .             .    .    .     .    .    .          )
+           20    2    2             0    0    0     4    0    0          .arg(Arg::with_name("delay")
+            .    .    .             .    .    .     .    .    .              .long("delay")
+            .    .    .             .    .    .     .    .    .              .takes_value(true)
+            .    .    .             .    .    .     .    .    .              .help("Delays execution of each instruction by this amount in ms")
+            .    .    .             .    .    .     .    .    .          )
+            .    .    .             .    .    .     .    .    .          .get_matches();
+            .    .    .             .    .    .     .    .    .  
+            6    1    0             1    0    0     1    0    0      let source_path = Path::new(args.value_of("input-file").unwrap());
+           10    0    0             0    0    0     2    0    0      if !source_path.exists() || !source_path.is_file() {
+            .    .    .             .    .    .     .    .    .          exit_with_error!("Not a valid file: '{}'", source_path.display());
+            .    .    .             .    .    .     .    .    .      }
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      let debug_mode = args.is_present("debug-enabled");
+            .    .    .             .    .    .     .    .    .      // We can call unwrap() because the validation is already done by clap
+            7    1    1             1    0    0     2    1    0      let debug_format = args.value_of("debug-format").unwrap().parse().unwrap();
+            .    .    .             .    .    .     .    .    .  
+           10    1    1             1    0    0     2    1    0      let delay: u64 = if let Some(delay_str) = args.value_of("delay") {
+            .    .    .             .    .    .     .    .    .          delay_str.parse().unwrap_or_else(|e: std::num::ParseIntError| exit_with_error!("Invalid delay: {}", e))
+            .    .    .             .    .    .     .    .    .      } else {
+            .    .    .             .    .    .     .    .    .          0
+            .    .    .             .    .    .     .    .    .      };
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      // We can call unwrap() because the validation is already done by clap
+            6    1    1             1    0    0     1    0    0      let opt = args.value_of("optimize").unwrap().parse().unwrap();
+            .    .    .             .    .    .     .    .    .  
+            1    0    0             0    0    0     1    0    0      let mut f = File::open(source_path).unwrap_or_else(|e| {
+            .    .    .             .    .    .     .    .    .          exit_with_error!("Could not open source file: {}", e);
+            .    .    .             .    .    .     .    .    .      });
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      let mut bytes = Vec::new();
+            6    1    1             2    1    0     1    0    0      f.read_to_end(&mut bytes).expect("Fatal: Could not read source file");
+       40,341    1    1         4,302    0    0 1,616    0    0      let program = precompile(bytes.iter(), opt);
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      // Based on debug_mode and delay, this will run one of several functions
+            .    .    .             .    .    .     .    .    .      // If there is no delay and debug mode is off, performance is prioritized and the interpreter
+            .    .    .             .    .    .     .    .    .      // should run at top speed
+            1    0    0             0    0    0     1    1    0      let input = io::stdin();
+            1    0    0             0    0    0     1    0    0      let output = io::stdout();
+            2    0    0             1    1    0     0    0    0      if debug_mode {
+            .    .    .             .    .    .     .    .    .          match debug_format {
+            .    .    .             .    .    .     .    .    .              DebugFormat::Text => {
+            2    0    0             0    0    0     1    0    0                  interpret(input, output, program, |state| format_human_readable(state, delay, match opt {
+            .    .    .             .    .    .     .    .    .                      OptimizationLevel::Off => 1,
+            .    .    .             .    .    .     .    .    .                      OptimizationLevel::Speed => 4,
+            .    .    .             .    .    .     .    .    .                  }));
+            .    .    .             .    .    .     .    .    .              },
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .              DebugFormat::Json => interpret(input, output, program, |state| format_json(state, delay)),
+            .    .    .             .    .    .     .    .    .          }
+            .    .    .             .    .    .     .    .    .      }
+            .    .    .             .    .    .     .    .    .      // Need this condition because delay can be active without debug_mode
+            3    1    1             1    1    0     0    0    0      else if delay > 0 {
+            .    .    .             .    .    .     .    .    .          interpret(input, output, program, |_| thread::sleep(Duration::from_millis(delay)));
+            .    .    .             .    .    .     .    .    .      }
+            .    .    .             .    .    .     .    .    .      else {
+8,958,618,467    1    1 4,931,380,606    0    0     0    0    0          interpret(input, output, program, |_| {});
+            .    .    .             .    .    .     .    .    .      }
+           12    0    0             7    1    0     2    0    0  }
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .  #[inline]
+            .    .    .             .    .    .     .    .    .  fn format_human_readable(state: InterpreterState, delay: u64, instruction_width: usize) {
+            .    .    .             .    .    .     .    .    .      use Instruction::*;
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      let pointer = state.current_pointer;
+            .    .    .             .    .    .     .    .    .  
+            .    .    .             .    .    .     .    .    .      let current_instruction = format!("#{:<3}", state.current_instruction);
+-- line 129 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /home/sunjay/Documents/projects/brainfuck/src/interpreter.rs
+--------------------------------------------------------------------------------
+            Ir I1mr ILmr            Dr       D1mr DLmr     Dw   D1mw DLmw 
+
+-- line 13 ----------------------------------------
+             .    .    .             .          .    .      .      .    .      pub instruction: Instruction,
+             .    .    .             .          .    .      .      .    .      /// The current "pointer" value that represents the current cell in memory
+             .    .    .             .          .    .      .      .    .      pub current_pointer: usize,
+             .    .    .             .          .    .      .      .    .      /// The entire memory buffer (read-only)
+             .    .    .             .          .    .      .      .    .      pub memory: &'a VecDeque<u8>,
+             .    .    .             .          .    .      .      .    .  }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .  /// callback is called after each instruction
+             5    2    2             0          0    0      5      2    0  pub fn interpret<I, O, F>(mut inp: I, mut out: O, mut program: Vec<Instruction>, mut callback: F)
+             .    .    .             .          .    .      .      .    .      where I: Read, O: Write,
+             .    .    .             .          .    .      .      .    .            F: FnMut(InterpreterState) {
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .      let mut buffer: VecDeque<u8> = VecDeque::new();
+             .    .    .             .          .    .      .      .    .      // Make sure there is at least one cell to begin with
+             .    .    .             .          .    .      .      .    .      buffer.push_back(0u8);
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .      // pointer is the position "pointer" in the buffer
+             .    .    .             .          .    .      .      .    .      let mut pointer: usize = 0;
+             .    .    .             .          .    .      .      .    .      // next_instruction is the instruction index in the program
+             .    .    .             .          .    .      .      .    .      let mut next_instruction: usize = 0;
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .      loop {
+ 6,246,190,838    1    1 3,123,095,418          0    0      0      0    0          if next_instruction >= program.len() {
+             .    .    .             .          .    .      .      .    .              break;
+             .    .    .             .          .    .      .      .    .          }
+             .    .    .             .          .    .      .      .    .          let current_instruction = next_instruction;
+ 9,942,595,944    1    1 6,532,845,681 41,616,187    0      0      0    0          let mut instr = program[current_instruction];
+ 3,123,095,418    0    0             0          0    0      0      0    0          next_instruction += 1;
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .          match instr {
+13,108,020,327    0    0 2,287,276,497          2    1      0      0    0              Instruction::Right(amount) => {
+   904,142,441    0    0             0          0    0      0      0    0                  pointer += amount;
+ 1,808,285,496    0    0             0          0    0      0      0    0                  while pointer >= buffer.len() {
+           614    0    0           614          0    0      0      0    0                      buffer.push_back(0u8);
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+             .    .    .             .          .    .      .      .    .              Instruction::Left(amount) => {
+ 1,827,208,758    2    2             0          0    0      0      0    0                  if amount > pointer {
+             .    .    .             .          .    .      .      .    .                      for _ in 0..(amount - pointer) {
+             .    .    .             .          .    .      .      .    .                          buffer.push_front(0u8);
+             .    .    .             .          .    .      .      .    .                      }
+             .    .    .             .          .    .      .      .    .                      pointer = 0;
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .                  else {
+ 1,218,139,172    0    0             0          0    0      0      0    0                      pointer -= amount;
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+   347,802,116    0    0   173,901,058          1    0      0      0    0              Instruction::Increment(amount) => buffer[pointer] = buffer[pointer].wrapping_add(amount as u8),
+   355,246,040    0    0   177,623,020          0    0      0      0    0              Instruction::Decrement(amount) => buffer[pointer] = buffer[pointer].wrapping_sub(amount as u8),
+        68,640    1    1        18,720      5,910    0 12,480 11,818    0              Instruction::Write => out.write_all(&[buffer[pointer]]).expect("Could not output"),
+             .    .    .             .          .    .      .      .    .              Instruction::Read => {
+             .    .    .             .          .    .      .      .    .                  let mut inbuffer: [u8; 1] = [0];
+             .    .    .             .          .    .      .      .    .                  let res = inp.read_exact(&mut inbuffer[0..1]);
+             .    .    .             .          .    .      .      .    .                  if res.is_ok() {
+             .    .    .             .          .    .      .      .    .                      buffer[pointer] = inbuffer[0];
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .                  else {
+             .    .    .             .          .    .      .      .    .                      buffer[pointer] = 0;
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+             .    .    .             .          .    .      .      .    .              Instruction::JumpForwardIfZero {ref mut matching} => {
+   845,068,304    0    0   422,534,152          4    0      0      0    0                  if buffer[pointer] == 0 {
+           424    0    0             0          0    0    106      1    0                      next_instruction = matching.unwrap_or_else(|| fill_matching(&mut program, next_instruction - 1));
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+             .    .    .             .          .    .      .      .    .              Instruction::JumpBackwardUnlessZero {matching} => {
+ 2,507,456,763    0    0   835,818,921          0    0      0      0    0                  if buffer[pointer] != 0 {
+             .    .    .             .          .    .      .      .    .                      next_instruction = matching;
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+             .    .    .             .          .    .      .      .    .          }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .          callback(InterpreterState {
+             .    .    .             .          .    .      .      .    .              current_instruction,
+             .    .    .             .          .    .      .      .    .              instruction: instr,
+-- line 87 ----------------------------------------
+-- line 92 ----------------------------------------
+             .    .    .             .          .    .      .      .    .  }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .  /// Finds the matching ']' for the given '[' located at `start`
+             .    .    .             .          .    .      .      .    .  /// Designed to fill in any JumpForwardIfZero instructions found along the way
+             .    .    .             .          .    .      .      .    .  /// so this function doesn't need to be called needlessly.
+             .    .    .             .          .    .      .      .    .  ///
+             .    .    .             .          .    .      .      .    .  /// # Panics
+             .    .    .             .          .    .      .      .    .  /// Panics if a match is not found
+         1,060    1    1             0          0    0    636      1    0  fn fill_matching(mut program: &mut Vec<Instruction>, start: usize) -> usize {
+             .    .    .             .          .    .      .      .    .      use super::MAX_NESTED_JUMPS;
+             .    .    .             .          .    .      .      .    .      let mut jumps = VecDeque::with_capacity(MAX_NESTED_JUMPS);
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .      let program_size = program.len();
+             .    .    .             .          .    .      .      .    .      let mut current = start;
+             .    .    .             .          .    .      .      .    .      loop {
+        12,240    0    0         4,080          0    0      0      0    0          if current >= program_size {
+             .    .    .             .          .    .      .      .    .              panic!("Mismatched `[` instruction");
+             .    .    .             .          .    .      .      .    .          }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .          match program[current] {
+        20,400    1    1         4,080      1,391    0      0      0    0              Instruction::JumpForwardIfZero { .. } => jumps.push_back(current),
+             .    .    .             .          .    .      .      .    .              Instruction::JumpBackwardUnlessZero { .. } => {
+             .    .    .             .          .    .      .      .    .                  let last_forward = jumps.pop_back().expect("Mismatched `]` instruction");
+             .    .    .             .          .    .      .      .    .                  match program[last_forward] {
+         2,034    0    0           678          1    0      0      0    0                      Instruction::JumpForwardIfZero {ref mut matching} => {
+             .    .    .             .          .    .      .      .    .                          debug_assert!(matching.is_none(),
+             .    .    .             .          .    .      .      .    .                              "matching was already set which means this function ran needlessly");
+         2,712    0    0             0          0    0  1,356      0    0                          *matching = Some(current + 1);
+             .    .    .             .          .    .      .      .    .                      },
+             .    .    .             .          .    .      .      .    .                      _ => unreachable!(),
+             .    .    .             .          .    .      .      .    .                  }
+             .    .    .             .          .    .      .      .    .              },
+             .    .    .             .          .    .      .      .    .              _ => {},
+             .    .    .             .          .    .      .      .    .          };
+             .    .    .             .          .    .      .      .    .  
+        12,240    0    0             0          0    0      0      0    0          if jumps.is_empty() {
+             .    .    .             .          .    .      .      .    .              break;
+             .    .    .             .          .    .      .      .    .          }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .          current += 1;
+             .    .    .             .          .    .      .      .    .      }
+             .    .    .             .          .    .      .      .    .  
+         4,080    1    1             0          0    0      0      0    0      current + 1
+           954    1    1           742          1    0      0      0    0  }
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .  #[cfg(test)]
+             .    .    .             .          .    .      .      .    .  mod tests {
+             .    .    .             .          .    .      .      .    .      use super::*;
+             .    .    .             .          .    .      .      .    .      use super::super::Instruction::*;
+             .    .    .             .          .    .      .      .    .  
+             .    .    .             .          .    .      .      .    .      use std::collections::VecDeque;
+             .    .    .             .          .    .      .      .    .  
+-- line 143 ----------------------------------------
+
+--------------------------------------------------------------------------------
+The following files chosen for auto-annotation could not be found:
+--------------------------------------------------------------------------------
+  /checkout/src/libcore/option.rs
+  /checkout/src/libcore/num/mod.rs
+  /checkout/src/libcollections/vec_deque.rs
+
+--------------------------------------------------------------------------------
+Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw 
+--------------------------------------------------------------------------------
+68    1    1 72  100    0  3   16    0  percentage of events annotated
+

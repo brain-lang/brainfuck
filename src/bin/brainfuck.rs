@@ -21,8 +21,7 @@ use brainfuck::{precompile, interpret, InterpreterState, DebugFormat, Instructio
 macro_rules! exit_with_error(
     ($($arg:tt)*) => { {
         use std::process;
-        writeln!(&mut ::std::io::stderr(), $($arg)*)
-            .expect("Failed while printing to stderr");
+        eprintln!($($arg)*);
         process::exit(1);
     } }
 );
@@ -147,29 +146,27 @@ fn format_human_readable(state: InterpreterState, delay: u64, instruction_width:
         format!("{} {:>3}", acc, cell)
     });
 
-    writeln!(
-        &mut io::stderr(),
+    eprintln!(
         "{} {:instruction_width$} {}",
         current_instruction.normal(),
         instruction,
         memory,
 
         instruction_width = instruction_width,
-    ).expect("failed to write debug output to stderr");
+    );
 
     thread::sleep(Duration::from_millis(delay));
 }
 
 #[inline]
 fn format_json(state: InterpreterState, delay: u64) {
-    writeln!(
-        &mut io::stderr(),
+    eprintln!(
         "{{\"currentInstructionIndex\": {}, \"instruction\": \"{}\", \"currentPointer\": {}, \"memory\": \"{}\"}}",
         state.current_instruction,
         state.instruction,
         state.current_pointer,
         state.memory.iter().fold(String::new(), |acc, v| format!("{} {}", acc, v))
-    ).expect("failed printing to stderr");
+    );
 
     thread::sleep(Duration::from_millis(delay));
 }
