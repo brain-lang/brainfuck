@@ -6,6 +6,8 @@ extern crate lazy_static;
 
 extern crate brainfuck;
 
+use std::io;
+
 use test::Bencher;
 
 use brainfuck::{precompile, Instruction, OptimizationLevel};
@@ -23,21 +25,9 @@ lazy_static! {
     static ref SLOW_SOURCE: Vec<u8> = include_bytes!("../examples/mandel.bf").to_vec();
 }
 
-struct NullWrite;
-
-impl std::io::Write for NullWrite {
-    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
-        Ok(bytes.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
 fn interpret(program: Vec<Instruction>) {
     let mut inp: &[u8] = &[];
-    brainfuck::interpret(&mut inp, NullWrite, program, |_| {});
+    brainfuck::interpret(&mut inp, io::sink(), program, |_| {});
 }
 
 #[bench]
